@@ -17,17 +17,10 @@ using namespace std;
 #include "FairLogger.h"
 
 #include "R3BEventHeader.h"
-<<<<<<< HEAD
 #include "R3BNeulandUnpackData.h"
 #include "R3BNeulandMappedData.h"
 #include "R3BPaddleTamexMappedItem.h"
 #include "R3BLosMappedItem.h"
-=======
-#include "R3BNeulandRawItem.h"
-#include "R3BNeulandMappedItem.h"
-#include "R3BNeulandTamexMappedItem.h"
-#include "R3BLosRawHit.h"
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 #include "R3BLandRawAna.h"
 
 R3BLandRawAna::R3BLandRawAna()
@@ -123,11 +116,7 @@ void R3BLandRawAna::Exec(Option_t* option)
         R3BNeulandTamexMappedItem* hitmapped;
         for (Int_t i = 0; i < nNeulandTamexHitsMapped; i++)
         {
-<<<<<<< HEAD
             hitmapped = (R3BPaddleTamexMappedItem*)fNeulandTamexHitMapped->At(i);
-=======
-            hitmapped = (R3BNeulandTamexMappedItem*)fNeulandTamexHitMapped->At(i);
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
             fh_neuland_mapped_is17->Fill(hitmapped->Is17());
             if(! hitmapped->Is17())
             {

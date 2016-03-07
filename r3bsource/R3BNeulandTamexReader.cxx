@@ -3,7 +3,7 @@
 
 #include "TClonesArray.h"
 #include "FairRootManager.h"
-#include "R3BNeulandTamexMappedItem.h"
+#include "R3BPaddleTamexMappedData.h"
 #include "ext_data_struct_info.hh"
 
 extern "C" {
@@ -20,7 +20,7 @@ R3BNeulandTamexReader::R3BNeulandTamexReader(EXT_STR_h101* data)
 	, fNEvent(0)
 	, fData(data)
 	, fLogger(FairLogger::GetLogger())
-    , fArray(new TClonesArray("R3BNeulandTamexMappedItem"))
+    , fArray(new TClonesArray("R3BNeulandTamexMappedData"))
 {
 }
 
@@ -70,14 +70,14 @@ Bool_t R3BNeulandTamexReader::Read()
                 data->NN_P[plane].tct_T[pm].BM != data->NN_P[plane].tft_T[pm].BM ||
                 data->NN_P[plane].tct_T[pm].B != data->NN_P[plane].tft_T[pm].B ){
 				fLogger->Info(MESSAGE_ORIGIN, "  Bad event, counter of coarse times and fine times do not match \n");
-				exit;
+				return kFALSE;
 			}
 			
            // the counter for leading and trailing edge should be always the same:
             if (data->NN_P[plane].tcl_T[pm].B != data->NN_P[plane].tct_T[pm].B ||
                 data->NN_P[plane].tfl_T[pm].B != data->NN_P[plane].tft_T[pm].B ){
 				fLogger->Info(MESSAGE_ORIGIN, "  Bad event, mismatch of trailing and leading edges \n");
-				exit;
+				return kFALSE;
 			}
 
             for (int hit=0; hit<data->NN_P[plane].tcl_T[pm].BM;hit++){
@@ -95,7 +95,7 @@ Bool_t R3BNeulandTamexReader::Read()
 //				    fLogger->Info(MESSAGE_ORIGIN, " trailing coarse time %d, fine time %d \n",cTE, fTE);					
 			    
                     new ((*fArray)[fArray->GetEntriesFast()])
-                        R3BNeulandTamexMappedItem(plane, bar, pm, cLE, fLE, cTE, fTE, kFALSE);
+                        R3BPaddleTamexMappedData(plane, bar, pm, cLE, fLE, cTE, fTE, kFALSE);
  
 		        }		
 		        start = stop;		
@@ -106,6 +106,7 @@ Bool_t R3BNeulandTamexReader::Read()
 //	fNEvent = fData->EVENTNO;
     fNEvent += 1;
 
+    return kTRUE;
 }
 
 void R3BNeulandTamexReader::Reset()

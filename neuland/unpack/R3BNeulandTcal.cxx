@@ -8,11 +8,7 @@
 #include "R3BNeulandTcal.h"
 
 #include "R3BTCalEngine.h"
-<<<<<<< HEAD
 #include "R3BPaddleTamexMappedData.h"
-=======
-#include "R3BNeulandTamexMappedItem.h"
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 #include "R3BNeulandPmt.h"
 #include "R3BTCalPar.h"
 #include "R3BEventHeader.h"
@@ -27,10 +23,6 @@
 R3BNeulandTcal::R3BNeulandTcal()
     : FairTask("LandTcal", 1)
     , fNEvents(0)
-<<<<<<< HEAD
-=======
-    , fMapPar()
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     , fMappedHit(NULL)
     , fPmt(new TClonesArray("R3BNeulandPmt"))
     , fNPmt(0)
@@ -46,10 +38,6 @@ R3BNeulandTcal::R3BNeulandTcal()
 R3BNeulandTcal::R3BNeulandTcal(const char* name, Int_t iVerbose)
     : FairTask(name, iVerbose)
     , fNEvents(0)
-<<<<<<< HEAD
-=======
-    , fMapPar()
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     , fMappedHit(NULL)
     , fPmt(new TClonesArray("R3BNeulandPmt"))
     , fNPmt(0)
@@ -77,16 +65,6 @@ InitStatus R3BNeulandTcal::Init()
     LOG(INFO) << "R3BNeulandTcal::Init : read " << fTcalPar->GetNumModulePar() << " calibrated modules"
               << FairLogger::endl;
     // fTcalPar->printParams();
-<<<<<<< HEAD
-=======
-    R3BTCalModulePar* par;
-    for (Int_t i = 0; i < fTcalPar->GetNumModulePar(); i++)
-    {
-        par = fTcalPar->GetModuleParAt(i);
-        fMapPar[par->GetModuleId()] = par;
-        par->printParams();
-    }
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 
     FairRootManager* mgr = FairRootManager::Instance();
     if (NULL == mgr)
@@ -100,17 +78,10 @@ InitStatus R3BNeulandTcal::Init()
         FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch R3BEventHeader not found");
     }
 */
-<<<<<<< HEAD
     fMappedHit = (TClonesArray*)mgr->GetObject("NeulandTamexMappedData");
     if (NULL == fMappedHit)
     {
         FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch R3BNeulandTamexMappedData not found");
-=======
-    fMappedHit = (TClonesArray*)mgr->GetObject("NeulandTamexMappedItem");
-    if (NULL == fMappedHit)
-    {
-        FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch R3BNeulandTamexMappedItem not found");
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     }
 
     mgr->Register("NeulandPmt", "Land", fPmt, kTRUE);
@@ -131,11 +102,7 @@ InitStatus R3BNeulandTcal::ReInit()
     return kSUCCESS;
 }
 
-<<<<<<< HEAD
 void R3BNeulandTcal::Exec(Option_t*)
-=======
-void R3BNeulandTcal::Exec(Option_t* option)
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 {
 	/*
     if (fTrigger >= 0)
@@ -153,11 +120,7 @@ void R3BNeulandTcal::Exec(Option_t* option)
         return;
     }
 */
-<<<<<<< HEAD
     R3BPaddleTamexMappedData* hit;
-=======
-    R3BNeulandTamexMappedItem* hit;
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     Int_t iPlane;
     Int_t iBar;
     Int_t iSide;
@@ -166,18 +129,10 @@ void R3BNeulandTcal::Exec(Option_t* option)
     R3BTCalModulePar* par;
     Double_t timeLE;
     Double_t timeTE;
-<<<<<<< HEAD
 
     for (Int_t ihit = 0; ihit < nHits; ihit++)
     {
        hit = (R3BPaddleTamexMappedData*)fMappedHit->At(ihit);
-=======
-    Int_t index;
-
-    for (Int_t ihit = 0; ihit < nHits; ihit++)
-    {
-       hit = (R3BNeulandTamexMappedItem*)fMappedHit->At(ihit);
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
        if (NULL == hit)
        {
           continue;
@@ -190,26 +145,9 @@ void R3BNeulandTcal::Exec(Option_t* option)
            // 17-th channel
            continue;
        }
-<<<<<<< HEAD
 
        // Convert TDC to [ns]
        if (! (par = fTcalPar->GetModuleParAt(iPlane, iBar, iSide)))
-=======
-       else
-       {
-           // PMT signal
-           channel = iPlane * fNofBars*4 + (iBar-1)*4 + (iSide)*2;
-       }
-       
-
-       // Convert TDC to [ns]
-       if (channel < 0 || channel >= (fNofPlanes*fNofBars*4))
-       {
-           LOG(ERROR) << "R3BNeulandTcal::Exec : wrong hardware channel: " << channel << FairLogger::endl;
-           continue;
-       }
-       if (!FindChannel(channel, &par))
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
        {
            LOG(DEBUG) << "R3BNeulandTcal::Exec : Tcal par not found, barId: " << iBar << ", side: " << iSide
                       << FairLogger::endl;
@@ -220,12 +158,7 @@ void R3BNeulandTcal::Exec(Option_t* option)
        tdc = hit->GetFineTimeLE();
        timeLE = par->GetTimeVFTX(tdc);
 
-<<<<<<< HEAD
        if (! (par = fTcalPar->GetModuleParAt(iPlane, iBar, iSide + 2)))
-=======
-       channel+=1;
-       if (!FindChannel(channel, &par))
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
        {
            LOG(DEBUG) << "R3BNeulandTcal::Exec : Tcal par not found, barId: " << iBar << ", side: " << iSide
                       << FairLogger::endl;
@@ -280,17 +213,4 @@ void R3BNeulandTcal::FinishTask()
 {
 }
 
-<<<<<<< HEAD
-=======
-Bool_t R3BNeulandTcal::FindChannel(Int_t channel, R3BTCalModulePar** par)
-{
-    (*par) = fMapPar[channel];
-    if (NULL == (*par))
-    {
-        return kFALSE;
-    }
-    return kTRUE;
-}
-
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 ClassImp(R3BNeulandTcal)

@@ -11,7 +11,7 @@ extern "C" {
 #include EXP_SPECIFIC_H101_FILE
 }
 
-#define MAX_TOFD_PLANES   1
+#define MAX_TOFD_PLANES   3
 #define MAX_TOFD_PADDLES 10 // paddles per plane
 
 R3BTofdReader::R3BTofdReader(EXT_STR_h101* data)

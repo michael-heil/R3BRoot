@@ -25,10 +25,7 @@ ${R3BROOT_SOURCE_DIR}/r3bdata/trackerData
 ${R3BROOT_SOURCE_DIR}/r3bdb/landdb
 ${R3BROOT_SOURCE_DIR}/tcal
 ${R3BROOT_SOURCE_DIR}/neuland/unpack
-<<<<<<< HEAD
 ${R3BROOT_SOURCE_DIR}/land/unpack
-=======
->>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})
@@ -56,6 +53,22 @@ R3BNeutronCalibr2D.cxx
 R3BPrimPart.cxx
 R3BNeutronTracker2D.cxx
 R3BNeutHit.cxx
+#unpack/R3BLandRawAna.cxx
+#unpack/R3BLandRawAnaS438b.cxx
+#unpack/R3BLandMapping.cxx
+#unpack/R3BLandUnpack.cxx
+unpack/R3BNeulandMapped2CalPar.cxx
+unpack/R3BLandParamRead.cxx
+unpack/R3BNeulandMapped2Cal.cxx
+#unpack/R3BLandAna.cxx
+#unpack/R3BNeulandCalTest.cxx
+unpack/R3BNeulandHitPar.cxx
+unpack/R3BNeulandCal2HitPar.cxx
+unpack/R3BLandCosmic1LSQR.cxx
+unpack/R3BLandCosmic1Util.cxx
+unpack/R3BNeulandParFact.cxx
+unpack/R3BNeulandCal2Hit.cxx
+unpack/R3BNeulandHitModulePar.cxx
 )
 
 # fill list of header files from list of source files

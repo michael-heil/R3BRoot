@@ -4,8 +4,8 @@
 // ------------------------------------------------------------
 
 #include "R3BLosCal2Hit.h"
-#include "R3BLosCalData.h"
-#include "R3BLosHitData.h"
+#include "R3BLosCalItem.h"
+#include "R3BLosHitItem.h"
 
 #include "FairLogger.h"
 
@@ -14,7 +14,7 @@
 R3BLosCal2Hit::R3BLosCal2Hit()
     : FairTask("LosCal2Hit", 1)
     , fCalItems(NULL)
-    , fHitItems(new TClonesArray("R3BLosHitData"))
+    , fHitItems(new TClonesArray("R3BLosHitItem"))
     , fNofHitItems(0)
 {
 }
@@ -22,7 +22,7 @@ R3BLosCal2Hit::R3BLosCal2Hit()
 R3BLosCal2Hit::R3BLosCal2Hit(const char* name, Int_t iVerbose)
     : FairTask(name, iVerbose)
     , fCalItems(NULL)
-    , fHitItems(new TClonesArray("R3BLosHitData"))
+    , fHitItems(new TClonesArray("R3BLosHitItem"))
     , fNofHitItems(0)
 {
 }
@@ -42,12 +42,12 @@ InitStatus R3BLosCal2Hit::Init()
     FairRootManager* mgr = FairRootManager::Instance();
     if (NULL == mgr)
         FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "FairRootManager not found");
-    fCalItems = (TClonesArray*)mgr->GetObject("LosCal");
+    fCalItems = (TClonesArray*)mgr->GetObject("LosCalItem");
     if (NULL == fCalItems)
-        FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch LosCal not found");
+        FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch LosCalItem not found");
 
 	// request storage of Hit data in output tree
-    mgr->Register("LosHit", "Land", fHitItems, kTRUE);
+    mgr->Register("LosHitItem", "Land", fHitItems, kTRUE);
 
     return kSUCCESS;
 }
@@ -71,7 +71,7 @@ void R3BLosCal2Hit::Exec(Option_t* option)
 
     for (Int_t i = 0; i < nDets; i++)
     {
-       R3BLosCalData* calItem = (R3BLosCalData*)fCalItems->At(i);
+       R3BLosCalItem* calItem = (R3BLosCalItem*)fCalItems->At(i);
        if (!calItem) continue; // can this happen?
             
        // missing times are NAN, hence t_hor or t_ver will also
@@ -92,7 +92,7 @@ void R3BLosCal2Hit::Exec(Option_t* option)
        // what shall we do with the master trigger?
        Double_t t_diff2MT=t_hit - calItem->fTime_ref_ns; // time relative to the master trig
               
-       new ((*fHitItems)[fNofHitItems]) R3BLosHitData(calItem->GetDetector(), t_hit , t_diff2MT);
+       new ((*fHitItems)[fNofHitItems]) R3BLosHitItem(calItem->GetDetector(), t_hit , t_diff2MT);
        fNofHitItems += 1;
     }
 }

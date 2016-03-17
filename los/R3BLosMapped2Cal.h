@@ -12,7 +12,7 @@
 #include <map>
 
 #include "FairTask.h"
-#include "R3BLosCalData.h"
+#include "R3BLosCalItem.h"
 
 class TClonesArray;
 class R3BTCalModulePar;
@@ -109,12 +109,16 @@ class R3BLosMapped2Cal : public FairTask
         fNofDetectors = nDets;
         fNofChannels = nChs;
         fNofModules  = nChs * nDets;
+        
+        if (fCalItemMap) delete [] fCalItemMap;
+        fCalItemMap = new R3BLosCalItem*[ fNofDetectors ];
     }
 
   private:
-    //std::map<Int_t, R3BTCalModulePar*> fMapPar; /**< Map for matching mdoule ID with parameter container. */
+    std::map<Int_t, R3BTCalModulePar*> fMapPar; /**< Map for matching mdoule ID with parameter container. */
     TClonesArray* fMappedItems;                 /**< Array with mapped items - input data. */
     TClonesArray* fCalItems;                    /**< Array with cal items - output data. */
+    R3BLosCalItem** fCalItemMap;                /**< used internally to reconstruct data. */
     Int_t fNofCalItems;                         /**< Number of produced time items per event. */
 
     R3BTCalPar* fTcalPar;                       /**< TCAL parameter container. */

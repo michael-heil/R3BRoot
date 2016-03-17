@@ -92,10 +92,12 @@ Bool_t R3BLosReader::Read()
 						data->LOS[d].TFv[j]
 						); // det,channel,energy
 			
-			curChannelStart=nextChannelStart;
-		}
-	}
-    return kTRUE;
+			new ((*fArray)[fArray->GetEntriesFast()])
+				R3BLosMappedItem(d+1,					// detector 1..n
+								 c+1,					// channel  1..n
+								 data->LOS[d]._[c].TC,  // coarse time
+								 data->LOS[d]._[c].TF); // fine time
+		}	
 }
 
 void R3BLosReader::Reset()

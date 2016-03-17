@@ -22,7 +22,7 @@
  */
 
 #include "R3BLosMapped2CalPar.h"
-#include "R3BLosMappedData.h"
+#include "R3BLosMappedItem.h"
 #include "R3BEventHeader.h"
 #include "R3BTCalPar.h"
 #include "R3BTCalEngine.h"
@@ -89,7 +89,7 @@ InitStatus R3BLosMapped2CalPar::Init()
     header = (R3BEventHeader*)rm->GetObject("R3BEventHeader");
 	// may be = NULL!
 	
-    fMapped = (TClonesArray*)rm->GetObject("LosMapped");
+    fMapped = (TClonesArray*)rm->GetObject("LosMappedItem");
     if (!fMapped)
     {
         return kFATAL;
@@ -104,8 +104,7 @@ InitStatus R3BLosMapped2CalPar::Init()
         return kFATAL;
     }
     
-    fEngine = new R3BTCalEngine(fCal_Par, fMinStats);
-//    fEngine = new R3BTCalEngine(fCal_Par, fNofModules, fMinStats);
+    fEngine = new R3BTCalEngine(fCal_Par, fNofModules, fMinStats);
 
     return kSUCCESS;
 }
@@ -122,7 +121,7 @@ void R3BLosMapped2CalPar::Exec(Option_t* option)
     for (Int_t i = 0; i < nHits; i++)
     {
 		
-        R3BLosMappedData* hit = (R3BLosMappedData*)fMapped->At(i);
+        R3BLosMappedItem* hit = (R3BLosMappedItem*)fMapped->At(i);
         if (!hit) continue; // should not happen
 
         
@@ -138,7 +137,7 @@ void R3BLosMapped2CalPar::Exec(Option_t* option)
         }
         if (iChannel>=fNofChannels) // same here
         {
-            LOG(ERROR) << "R3BLosMapped2CalPar::Exec() : more bars than expected! Det: " << (iDetector+1) << " allowed are 1.." << fNofChannels << FairLogger::endl;
+            LOG(ERROR) << "R3BLosMapped2CalPar::Exec() : more bars then expected! Det: " << (iDetector+1) << " allowed are 1.." << fNofChannels << FairLogger::endl;
             continue;
         }
 
@@ -154,9 +153,7 @@ void R3BLosMapped2CalPar::Exec(Option_t* option)
         }
 
         // Fill TAC histogram
-        //fEngine->Fill(iModule, hit->GetTimeFine());
-        // *** new ***
-        fEngine->Fill(iDetector+1, iChannel + 1, 1, hit->GetTimeFine());
+        fEngine->Fill(iModule, hit->GetTimeFine());
     }
 
     // Increment events

@@ -19,7 +19,7 @@
 #include "R3BLosMapped2Cal.h"
 
 #include "R3BTCalEngine.h"
-#include "R3BLosMappedData.h"
+#include "R3BLosMappedItem.h"
 #include "R3BTCalPar.h"
 #include "R3BEventHeader.h"
 
@@ -29,18 +29,13 @@
 #include "FairLogger.h"
 
 #include "TClonesArray.h"
-#include "TMath.h"
-
-
-
-#define LOS_COINC_WINDOW_NS 20       
-#define IS_NAN(x) TMath::IsNaN(x)
-
 
 R3BLosMapped2Cal::R3BLosMapped2Cal()
     : FairTask("LosTcal", 1)
+    , fMapPar()
     , fMappedItems(NULL)
-    , fCalItems(new TClonesArray("R3BLosCalData"))
+    , fCalItems(new TClonesArray("R3BLosCalItem"))
+    , fCalItemMap(NULL)
     , fNofCalItems(0)
     , fNofTcalPars(0)
     , fNofModules(0)
@@ -52,8 +47,10 @@ R3BLosMapped2Cal::R3BLosMapped2Cal()
 
 R3BLosMapped2Cal::R3BLosMapped2Cal(const char* name, Int_t iVerbose)
     : FairTask(name, iVerbose)
+    , fMapPar()
     , fMappedItems(NULL)
-    , fCalItems(new TClonesArray("R3BLosCalData"))
+    , fCalItems(new TClonesArray("R3BLosCalItem"))
+    , fCalItemMap(NULL)
     , fNofCalItems(0)
     , fNofTcalPars(0)
     , fNofModules(0)
@@ -84,6 +81,19 @@ InitStatus R3BLosMapped2Cal::Init()
 
     LOG(INFO) << "R3BLosMapped2Cal::Init : read " << fNofModules << " modules" << FairLogger::endl;
     
+	// create the map for fast access in exec()
+    for (Int_t i = 0; i < fNofTcalPars; i++)
+    {
+        R3BTCalModulePar* par = fTcalPar->GetModuleParAt(i);
+        if (!par) 
+        {
+			LOG(INFO) << "No LOS Tcal pars for module " << i << FairLogger::endl;
+			continue;
+		}
+        fMapPar[par->GetModuleId()] = par;
+    }
+
+
 	// try to get a handle on the EventHeader. EventHeader may not be 
 	// present though and hence may be null. Take care when using.
     FairRootManager* mgr = FairRootManager::Instance();
@@ -93,13 +103,13 @@ InitStatus R3BLosMapped2Cal::Init()
 
 
 	// get access to Mapped data
-    fMappedItems = (TClonesArray*)mgr->GetObject("LosMapped");
+    fMappedItems = (TClonesArray*)mgr->GetObject("LosMappedItem");
     if (NULL == fMappedItems)
-        FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch LosMapped not found");
+        FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch R3BLosMappedItem not found");
 
 
 	// request storage of Cal data in output tree
-    mgr->Register("LosCal", "Land", fCalItems, kTRUE);
+    mgr->Register("LosCalItem", "Land", fCalItems, kTRUE);
 
     return kSUCCESS;
 }
@@ -130,9 +140,12 @@ void R3BLosMapped2Cal::Exec(Option_t* option)
 
     Int_t nHits = fMappedItems->GetEntriesFast();
 
+	// clear map of reconstructed detectors
+	memset(fCalItemMap,0,sizeof(R3BLosCalItem*) * fNofDetectors);
+
     for (Int_t ihit = 0; ihit < nHits; ihit++)
     {
-       R3BLosMappedData* hit = (R3BLosMappedData*)fMappedItems->At(ihit);
+       R3BLosMappedItem* hit = (R3BLosMappedItem*)fMappedItems->At(ihit);
        if (!hit) continue;
 
        // channel numbers are stored 1-based (1..n)
@@ -148,10 +161,7 @@ void R3BLosMapped2Cal::Exec(Option_t* option)
        }
        
 	   // Fetch calib data for current channel
-       //R3BTCalModulePar* par = fMapPar[module]; // calibration data for cur ch
-       // new: 
-       R3BTCalModulePar* par = fTcalPar->GetModuleParAt(iDet, iCha, 1);
-        
+       R3BTCalModulePar* par = fMapPar[module]; // calibration data for cur ch
        if (!par)
        {
            LOG(INFO) << "R3BLosMapped2Cal::Exec : Tcal par not found, Detector: " << 
@@ -175,63 +185,21 @@ void R3BLosMapped2Cal::Exec(Option_t* option)
 	   // ... and add clock time
        time_ns = fClockFreq-time_ns + hit->GetTimeCoarse() * fClockFreq;
        
-       /* Note: we have multi-hit data...
-        *  
-        * So the map needs to have one item per detector and (multi-)hit
-        * Then we need to establish a time window
-        * Here, we have the hits unsorted in time and channel. If we 
-        * reconstruct a detector hit using a time window, So:
-        * 
-        * For each single hit, search the list of detector hits. If a
-        * matching hit is found (dt < window and item not yet set), add
-        * item. Else create new detector hit.
-        * 
-        * This way, we theoretically *might* end up with two calItems 
-        * which are actually just one. Hm... this should be very rare. 
-        * Care about that later if it becomes necessary. 
-        * 
-        * Even though we have technically two LOS detectors in s438b,
-        * only one really produces data so it's ok to throw all
-        * detector hits into the same list (and hence traversing a longer
-        * list than strictly necessary for the reconstruction)
-        */
-               
-       // see if there is already a detector hit around that time 
-       R3BLosCalData* calItem=NULL;
-       for (int iCal=0;iCal<fNofCalItems;iCal++)
+       // reconstruct detector data: get handle on detector item
+       if (!fCalItemMap[iDet-1]) 
        {
-		   R3BLosCalData* aCalItem=(R3BLosCalData*)fCalItems->At(iCal);
-		   if (fabs(aCalItem->GetMeanTime()-time_ns) < LOS_COINC_WINDOW_NS)
-		   {
-			   // check if item is already set. If so, we need to skip this event!
-			   switch (iCha)
-			   {
-				   case 1 : if (!IS_NAN(aCalItem->fTime_r_ns))   LOG(ERROR) << "R3BLosMapped2Cal::Exec : Skip event because of unhandle-able pileup." << FairLogger::endl;break;
-				   case 2 : if (!IS_NAN(aCalItem->fTime_t_ns))   LOG(ERROR) << "R3BLosMapped2Cal::Exec : Skip event because of unhandle-able pileup." << FairLogger::endl;break;
-				   case 3 : if (!IS_NAN(aCalItem->fTime_l_ns))   LOG(ERROR) << "R3BLosMapped2Cal::Exec : Skip event because of unhandle-able pileup." << FairLogger::endl;break;
-				   case 4 : if (!IS_NAN(aCalItem->fTime_b_ns))   LOG(ERROR) << "R3BLosMapped2Cal::Exec : Skip event because of unhandle-able pileup." << FairLogger::endl;break;
-				   case 5 : if (!IS_NAN(aCalItem->fTime_ref_ns)) LOG(ERROR) << "R3BLosMapped2Cal::Exec : Skip event because of unhandle-able pileup." << FairLogger::endl;break;
-			   }       			   
-			   calItem=aCalItem;
-			   break;
-		   }
-	   } 
-
-       if (!calItem) 
-       {
-		    // there is no detector hit with matching time. Hence, create a new one.
-			calItem = new ((*fCalItems)[fNofCalItems]) R3BLosCalData(iDet);
+			fCalItemMap[iDet-1] = new ((*fCalItems)[fNofCalItems]) R3BLosCalItem(iDet);
 			fNofCalItems += 1;
 	   }
-
+			
 	   // set the time to the correct cal item
 	   switch (iCha)
 	   {
-		   case 1 : calItem->fTime_r_ns   = time_ns;break;
-		   case 2 : calItem->fTime_t_ns   = time_ns;break;
-		   case 3 : calItem->fTime_l_ns   = time_ns;break;
-		   case 4 : calItem->fTime_b_ns   = time_ns;break;
-		   case 5 : calItem->fTime_ref_ns = time_ns;break;
+		   case 1 : fCalItemMap[iDet-1]->fTime_r_ns   = time_ns;break;
+		   case 2 : fCalItemMap[iDet-1]->fTime_t_ns   = time_ns;break;
+		   case 3 : fCalItemMap[iDet-1]->fTime_l_ns   = time_ns;break;
+		   case 4 : fCalItemMap[iDet-1]->fTime_b_ns   = time_ns;break;
+		   case 5 : fCalItemMap[iDet-1]->fTime_ref_ns = time_ns;break;
 		   default: LOG(INFO) << "R3BLosMapped2Cal::Exec : Channel number out of range: " << 
            iCha << FairLogger::endl;
 	   }       

@@ -62,9 +62,11 @@
 #pragma link C++ class R3BPspxMappedData+;
 #pragma link C++ class R3BPspxCalData+;
 #pragma link C++ class R3BLosMappedData+;
-#pragma link C++ class R3BNeulandTamexMappedItem+;
+#pragma link C++ class R3BPaddleTamexMappedData+;
 #pragma link C++ class R3BActarPoint+;
 #pragma link C++ class R3BLosCalData+;
 #pragma link C++ class R3BLosHitData+;
+#pragma link C++ class R3BTofdMappedData+;
+#pragma link C++ class R3BPaddleCalData+;
 #endif
 

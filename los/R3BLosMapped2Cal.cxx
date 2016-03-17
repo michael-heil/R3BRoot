@@ -84,20 +84,6 @@ InitStatus R3BLosMapped2Cal::Init()
 
     LOG(INFO) << "R3BLosMapped2Cal::Init : read " << fNofModules << " modules" << FairLogger::endl;
     
-	// create the map for fast access in exec()
-	/*
-    for (Int_t i = 0; i < fNofTcalPars; i++)
-    {
-        R3BTCalModulePar* par = fTcalPar->GetModuleParAt(i);
-        if (!par) 
-        {
-			LOG(INFO) << "No LOS Tcal pars for module " << i << FairLogger::endl;
-			continue;
-		}
-        fMapPar[par->GetModuleId()] = par;
-    }
-*/
-
 	// try to get a handle on the EventHeader. EventHeader may not be 
 	// present though and hence may be null. Take care when using.
     FairRootManager* mgr = FairRootManager::Instance();

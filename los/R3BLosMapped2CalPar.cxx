@@ -105,6 +105,7 @@ InitStatus R3BLosMapped2CalPar::Init()
     }
     
     fEngine = new R3BTCalEngine(fCal_Par, fMinStats);
+//    fEngine = new R3BTCalEngine(fCal_Par, fNofModules, fMinStats);
 
     return kSUCCESS;
 }

@@ -15,6 +15,8 @@
 #include "R3BLosCalData.h"
 
 class TClonesArray;
+class TH1F;
+class TH2F;
 class R3BTCalModulePar;
 class R3BTCalPar;
 class R3BEventHeader;
@@ -128,7 +130,6 @@ class R3BLosMapped2Cal : public FairTask
     UInt_t fNofChannels;   /**< Number of channels per detector. */    
 	UInt_t fNofModules;    /**< Total number of channels. */
     Double_t fClockFreq;   /**< Clock cycle in [ns]. */
-
 
   public:
     ClassDef(R3BLosMapped2Cal, 1)

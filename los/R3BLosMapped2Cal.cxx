@@ -24,9 +24,12 @@
 #include "R3BEventHeader.h"
 
 #include "FairRunAna.h"
+#include "FairRunOnline.h"
 #include "FairRuntimeDb.h"
 #include "FairRootManager.h"
 #include "FairLogger.h"
+#include "TH1F.h"
+#include "TH2F.h"
 
 #include "TClonesArray.h"
 #include "TMath.h"
@@ -99,8 +102,8 @@ InitStatus R3BLosMapped2Cal::Init()
 
 
 	// request storage of Cal data in output tree
-    mgr->Register("LosCal", "Land", fCalItems, kTRUE);
-
+    mgr->Register("LosCalItem", "Land", fCalItems, kTRUE);
+    
     return kSUCCESS;
 }
 
@@ -113,7 +116,7 @@ void R3BLosMapped2Cal::SetParContainers()
 		LOG(ERROR) << "Could not get access to LosTCalPar-Container." << FairLogger::endl;
 		fNofTcalPars=0;
 		return;
-	}
+    }
 }
 
 InitStatus R3BLosMapped2Cal::ReInit()
@@ -236,7 +239,7 @@ void R3BLosMapped2Cal::Exec(Option_t* option)
            iCha << FairLogger::endl;
 	   }       
     }
-
+    
 }
 
 void R3BLosMapped2Cal::FinishEvent()

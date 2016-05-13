@@ -13,6 +13,7 @@ ${R3BROOT_SOURCE_DIR}/r3bbase
 ${R3BROOT_SOURCE_DIR}/r3bdata/landData
 ${R3BROOT_SOURCE_DIR}/r3bdata/neulandData
 ${R3BROOT_SOURCE_DIR}/r3bdata/caloData
+${R3BROOT_SOURCE_DIR}/r3bdata/losData
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})
@@ -32,6 +33,7 @@ R3BEventHeader.cxx
 R3BEventHeaderUnpack.cxx
 R3BTimeStampUnpack.cxx
 R3BLmdSource.cxx
+R3BOnlineSpectra.cxx
 )
 
 # fill list of header files from list of source files

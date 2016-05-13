@@ -4,7 +4,11 @@
 // ----------------------------------------------------------------
 
 #include "R3BNeulandTcalFill.h"
+<<<<<<< HEAD
 #include "R3BPaddleTamexMappedData.h"
+=======
+#include "R3BNeulandTamexMappedItem.h"
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 #include "R3BEventHeader.h"
 #include "R3BTCalPar.h"
 #include "R3BTCalEngine.h"
@@ -74,7 +78,11 @@ InitStatus R3BNeulandTcalFill::Init()
     {
         return kFATAL;
     }*/
+<<<<<<< HEAD
     fHits = (TClonesArray*)rm->GetObject("NeulandTamexMappedData");
+=======
+    fHits = (TClonesArray*)rm->GetObject("NeulandTamexMappedItem");
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     if (!fHits)
     {
         return kFATAL;
@@ -83,12 +91,20 @@ InitStatus R3BNeulandTcalFill::Init()
     fCal_Par = (R3BTCalPar*)FairRuntimeDb::instance()->getContainer("LandTCalPar");
     fCal_Par->setChanged();
 
+<<<<<<< HEAD
     fEngine = new R3BTCalEngine(fCal_Par, fMinStats);
+=======
+    fEngine = new R3BTCalEngine(fCal_Par, fNofPlanes*fNofBars*4 + fNof17, fMinStats);
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 
     return kSUCCESS;
 }
 
+<<<<<<< HEAD
 void R3BNeulandTcalFill::Exec(Option_t*)
+=======
+void R3BNeulandTcalFill::Exec(Option_t* option)
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 {
  /*   if (fTrigger >= 0)
     {
@@ -108,16 +124,28 @@ void R3BNeulandTcalFill::Exec(Option_t*)
     }
 */
 
+<<<<<<< HEAD
     R3BPaddleTamexMappedData* hit;
     Int_t iPlane;
     Int_t iBar;
     Int_t iSide;
+=======
+    R3BNeulandTamexMappedItem* hit;
+    Int_t iPlane;
+    Int_t iBar;
+    Int_t iSide;
+    Int_t channel;
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     
 
     // Loop over mapped hits
     for (Int_t i = 0; i < nHits; i++)
     {
+<<<<<<< HEAD
         hit = (R3BPaddleTamexMappedData*)fHits->At(i);
+=======
+        hit = (R3BNeulandTamexMappedItem*)fHits->At(i);
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
         if (!hit)
         {
             continue;
@@ -137,6 +165,7 @@ void R3BNeulandTcalFill::Exec(Option_t*)
             continue;
         }
 
+<<<<<<< HEAD
 //        if (hit->Is17())
 //        {
             // 17-th channel
@@ -154,6 +183,34 @@ void R3BNeulandTcalFill::Exec(Option_t*)
         // Fill TAC histogram
         fEngine->Fill(iPlane, iBar, iSide, hit->GetFineTimeLE());
         fEngine->Fill(iPlane, iBar, iSide + 2, hit->GetFineTimeTE());
+=======
+        if (hit->Is17())
+        {
+            // 17-th channel
+//MH            channel = fNofPMTs + hit->GetGtb() * 20 + hit->GetTacAddr();
+        }
+        else
+        {
+            // PMT signal
+            iSide = hit->GetSide();
+//            channel = (Double_t)fNofPMTs * (iSide - 1) + iBar - 1;
+            channel = iPlane * fNofBars*4 + (iBar-1)*4 + (iSide)*2;
+            
+//            LOG(INFO) << "Plane: " << iPlane << " Bar: " << iBar << " Side: " << iSide << " Cal channel: " << channel << "   "  << FairLogger::endl;
+             
+        }
+
+        // Check validity of module
+        if (channel < 0 || channel >= (fNofPlanes*fNofBars*4))
+        {
+            LOG(INFO) << "Plane: " << iPlane << "  Bar:" << iBar << "  Side:" << iSide << "  " << channel << "   "  << FairLogger::endl;
+            FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Illegal detector ID...");
+        }
+
+        // Fill TAC histogram
+        fEngine->Fill(channel, hit->GetFineTimeLE());
+        fEngine->Fill(channel+1, hit->GetFineTimeTE());
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
     }
 
     // Increment events

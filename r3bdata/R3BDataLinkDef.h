@@ -63,6 +63,6 @@
 #pragma link C++ class R3BLosMappedItem+;
 #pragma link C++ class R3BLosCalItem+;
 #pragma link C++ class R3BLosHitItem+;
-
+#pragma link C++ class R3BNeulandTamexMappedItem+;
 #endif
 

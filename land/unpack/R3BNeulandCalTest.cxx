@@ -6,7 +6,11 @@
 #include "FairRootManager.h"
 #include "FairLogger.h"
 
+<<<<<<< HEAD:land/unpack/R3BNeulandCalTest.cxx
 #include "R3BNeulandCalData.h"
+=======
+#include "R3BLandPmt.h"
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.:land/unpack/R3BLandTcalTest.cxx
 #include "R3BNeulandPmt.h"
 #include "R3BLosHit.h"
 #include "R3BNeulandCalTest.h"
@@ -53,7 +57,11 @@ InitStatus R3BNeulandCalTest::Init()
     {
         FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "FairRootManager not found");
     }
+<<<<<<< HEAD:land/unpack/R3BNeulandCalTest.cxx
     fLandPmt = (TClonesArray*)fMan->GetObject("NeulandCalData");
+=======
+    fLandPmt = (TClonesArray*)fMan->GetObject("LandPmt");
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.:land/unpack/R3BLandTcalTest.cxx
     fNeulandPmt = (TClonesArray*)fMan->GetObject("NeulandPmt");
     fLosHit = (TClonesArray*)fMan->GetObject("LosHit");
     CreateHistos();

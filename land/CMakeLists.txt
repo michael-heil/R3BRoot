@@ -25,7 +25,10 @@ ${R3BROOT_SOURCE_DIR}/r3bdata/trackerData
 ${R3BROOT_SOURCE_DIR}/r3bdb/landdb
 ${R3BROOT_SOURCE_DIR}/tcal
 ${R3BROOT_SOURCE_DIR}/neuland/unpack
+<<<<<<< HEAD
 ${R3BROOT_SOURCE_DIR}/land/unpack
+=======
+>>>>>>> Added: Tamex reader. Geometry and macro for s2018.
 )
 
 include_directories( ${INCLUDE_DIRECTORIES})

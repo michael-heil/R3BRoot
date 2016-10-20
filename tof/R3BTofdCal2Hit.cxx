@@ -37,6 +37,8 @@ R3BTofdCal2Hit::R3BTofdCal2Hit()
     , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
 {
     fhxy = NULL;		
+    fhxq3mm = NULL;		
+    fhxq5mm = NULL;		
     fhCharge = NULL;		
     fhCharge3mm = NULL;		
     fhCharge5mm = NULL;		
@@ -70,6 +72,8 @@ R3BTofdCal2Hit::R3BTofdCal2Hit()
 	        fhTot2vsPos[i][j] = NULL;
 	        fhQvsQ[i][j] = NULL;
 	        fhQvsTof[i][j] = NULL;
+	        fhQvsBeta[i][j] = NULL;
+	        fhTofvsQ[i][j] = NULL;
 	    }
     }
 }
@@ -89,6 +93,8 @@ R3BTofdCal2Hit::R3BTofdCal2Hit(const char* name, Int_t iVerbose)
     , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
 {
     fhxy = NULL;		
+    fhxq3mm = NULL;		
+    fhxq5mm = NULL;		
     fhCharge = NULL;		
     fhCharge3mm = NULL;		
     fhCharge5mm = NULL;		
@@ -121,6 +127,8 @@ R3BTofdCal2Hit::R3BTofdCal2Hit(const char* name, Int_t iVerbose)
 	        fhTot2vsPos[i][j] = NULL;
  	        fhQvsQ[i][j] = NULL;
  	        fhQvsTof[i][j] = NULL;
+ 	        fhQvsBeta[i][j] = NULL;
+ 	        fhTofvsQ[i][j] = NULL;
         } 
     }
 }
@@ -128,6 +136,8 @@ R3BTofdCal2Hit::R3BTofdCal2Hit(const char* name, Int_t iVerbose)
 R3BTofdCal2Hit::~R3BTofdCal2Hit()
 {
     if (fhxy) delete fhxy ;		
+    if (fhxq3mm) delete fhxq3mm ;		
+    if (fhxq5mm) delete fhxq5mm ;		
     if (fhCharge) delete  fhCharge;		
     if (fhCharge3mm) delete  fhCharge3mm;		
     if (fhCharge5mm) delete  fhCharge5mm;		
@@ -160,6 +170,8 @@ R3BTofdCal2Hit::~R3BTofdCal2Hit()
             if (fhTot2vsPos[i][j]) delete fhTot2vsPos[i][j];
 	        if (fhQvsQ[i][j]) delete fhQvsQ[i][j];
 	        if (fhQvsTof[i][j]) delete fhQvsTof[i][j];
+	        if (fhQvsBeta[i][j]) delete fhQvsBeta[i][j];
+ 	        if (fhTofvsQ[i][j]) delete fhTofvsQ[i][j];
         }
     }
     if (fHitItems)
@@ -202,6 +214,25 @@ InitStatus R3BTofdCal2Hit::Init()
     mgr->Register("TofdHit", "Land", fHitItems, kTRUE);
 
 
+    // read in walk parameter
+    ifstream a_file ( "walk_run054.dat");
+    if(!a_file){
+        cout<<"Could not open file!!!"<<endl;
+        exit(1);
+    }
+    Int_t p, b, dummy;
+    Double_t par;
+          
+    while(!a_file.eof()){ 
+       for(Int_t j=0;j<=5;j++){   
+           a_file>> p >> b >> dummy >> par;
+           walkPar[p][b][j]=par;
+           cout<<"Reading walk Parameter, plane "<<p<< " bar "<<b<<" #"<<j<<" : "<<walkPar[p][b][j]<<endl;          
+       }
+    }
+    a_file.close();	 
+
+
     return kSUCCESS;
 }
 
@@ -225,6 +256,9 @@ InitStatus R3BTofdCal2Hit::ReInit()
 
 void R3BTofdCal2Hit::Exec(Option_t* option)
 {
+      Double_t beta0=0.7937626;
+      Double_t beta=0.;
+
       Double_t tot1=0.;
       Double_t tot2=0.;
       Double_t tot1sat=0.;
@@ -247,6 +281,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
       Double_t y[N_PLANE_MAX+1][N_PADDLE_MAX+1],Q[N_PLANE_MAX+1][N_PADDLE_MAX+1];     
       Double_t tof[N_PLANE_MAX+1][N_PADDLE_MAX+1];     
       Double_t t_3mm[N_PADDLE_MAX*2], t_5mm[N_PADDLE_MAX*2];
+      Double_t Q_3mm[N_PADDLE_MAX*2], Q_5mm[N_PADDLE_MAX*2];
       
       for(Int_t i=1;i<=fNofPlanes;i++){
         for(Int_t j=1;j<=fPaddlesPerPlane;j++){
@@ -258,7 +293,11 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           t_3mm[2*j]=0.;
           t_5mm[2*j-1]=0.;
           t_5mm[2*j]=0.;
-         
+          Q_3mm[2*j-1]=0.;
+          Q_3mm[2*j]=0.;
+          Q_5mm[2*j-1]=0.;
+          Q_5mm[2*j]=0.;
+        
         }    
       }
       if(fCalItemsLos)
@@ -288,90 +327,120 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
               char strName[255];
               sprintf(strName, "PositionPlane_%d_Bar_%d", iPlane, iBar);
               fhPos[iPlane - 1][iBar - 1] = new TH1F(strName, "", 2000, -100., 100.);
+              fhPos[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("X position in cm");
+              fhPos[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhTotPm1[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_1", iPlane, iBar);
               fhTotPm1[iPlane - 1][iBar - 1] = new TH1F(strName, "", 5000, 0., 500.);
+              fhTotPm1[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT in ns");
+              fhTotPm1[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhTotPm2[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_2", iPlane, iBar);
               fhTotPm2[iPlane - 1][iBar - 1] = new TH1F(strName, "", 5000, 0., 500.);
+              fhTotPm2[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT in ns");
+              fhTotPm2[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhTotPm1Sat[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_1_after_saturation", iPlane, iBar);
               fhTotPm1Sat[iPlane - 1][iBar - 1] = new TH1F(strName, "", 5000, 0., 500.);
+              fhTotPm1Sat[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT in ns");
+              fhTotPm1Sat[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhTotPm2Sat[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_2_after_saturation", iPlane, iBar);
               fhTotPm2Sat[iPlane - 1][iBar - 1] = new TH1F(strName, "", 5000, 0., 500.);
+              fhTotPm2Sat[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT in ns");
+              fhTotPm2Sat[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhQPm1[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q_Plane_%d_Bar_%d_PM_1", iPlane, iBar);
               fhQPm1[iPlane - 1][iBar - 1] = new TH1F(strName, "", 2000, 0., 100.);
+              fhQPm1[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Charge");
+              fhQPm1[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhQPm2[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q_Plane_%d_Bar_%d_PM_2", iPlane, iBar);
               fhQPm2[iPlane - 1][iBar - 1] = new TH1F(strName, "", 2000, 0., 100.);
+              fhQPm2[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Charge");
+              fhQPm2[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhQ[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q_Plane_%d_Bar_%d", iPlane, iBar);
               fhQ[iPlane - 1][iBar - 1] = new TH1F(strName, "", 2000, 0., 100.);
+              fhQ[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Charge");
+              fhQ[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Counts");
           }
           if (NULL == fhQ1vsPos[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q1_vs_Pos_Plane_%d_Bar_%d", iPlane, iBar);
               fhQ1vsPos[iPlane - 1][iBar - 1] = new TH2F(strName, "", 200, -100, 100, 2000, 0., 100.);
+              fhQ1vsPos[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Position in cm");
+              fhQ1vsPos[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
           }
           if (NULL == fhQ2vsPos[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q2_vs_Pos_Plane_%d_Bar_%d", iPlane, iBar);
               fhQ2vsPos[iPlane - 1][iBar - 1] = new TH2F(strName, "", 200, -100, 100, 2000, 0., 100.);
+              fhQ2vsPos[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Position in cm");
+              fhQ2vsPos[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
           }
           if (NULL == fhQvsPos[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Q_vs_Pos_Plane_%d_Bar_%d", iPlane, iBar);
               fhQvsPos[iPlane - 1][iBar - 1] = new TH2F(strName, "", 200, -100, 100, 2000, 0., 100.);
+              fhQvsPos[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Position in cm");
+              fhQvsPos[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
           }
           if (NULL == fhSqrtQvsPos[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "SqrtQ_vs_Pos_Plane_%d_Bar_%d", iPlane, iBar);
               fhSqrtQvsPos[iPlane - 1][iBar - 1] = new TH2F(strName, "", 200, -100, 100, 5000, 0., 500.);
+              fhSqrtQvsPos[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Position in cm");
+              fhSqrtQvsPos[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
           }
           if (NULL == fhTotPm1vsTotPm2[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Tot_PM1_vs_Tot_PM2_Plane_%d_Bar_%d", iPlane, iBar);
               fhTotPm1vsTotPm2[iPlane - 1][iBar - 1] = new TH2F(strName, "", 1000, 0, 1000, 1000, 0., 1000.);
+              fhTotPm1vsTotPm2[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT PM1 in ns");
+              fhTotPm1vsTotPm2[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("ToT PM2 in ns");
           }
           if (NULL == fhTotPm1satvsTotPm2sat[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Tot_PM1_vs_Tot_PM2_Plane_%d_Bar_%d_after_saturation", iPlane, iBar);
               fhTotPm1satvsTotPm2sat[iPlane - 1][iBar - 1] = new TH2F(strName, "", 1000, 0, 1000, 1000, 0., 1000.);
+              fhTotPm1satvsTotPm2sat[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToT PM1 in ns");
+              fhTotPm1satvsTotPm2sat[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("ToT PM2 in ns");
           }
           if (NULL == fhTdiffvsQ[iPlane - 1][iBar - 1])
           {
               char strName[255];
               sprintf(strName, "Tdiff_Plane_%dand%d_Bar_%dvsQ", iPlane, iPlane+1, iBar);
               fhTdiffvsQ[iPlane - 1][iBar - 1] = new TH2F(strName, "", 10000, -50, 50, 1000, 0., 100.);
+              fhTdiffvsQ[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Time in ns");
+              fhTdiffvsQ[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
           }
           if (NULL == fhTot1vsPos[iPlane - 1][iBar - 1])
           {
@@ -395,6 +464,26 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
               fhxy->GetXaxis()->SetTitle("X position in cm");
               fhxy->GetYaxis()->SetTitle("Y position in cm");
           }
+          if (NULL == fhxq3mm)
+          {
+              char strName1[255];
+              char strName2[255];
+              sprintf(strName1, "Q_vs_x_3mm");
+              sprintf(strName2, "Q vs. x of TofD for 3 mm paddles");
+              fhxq3mm = new TH2F(strName1, strName2, 15, 0, 15, 2000, 0., 100.);
+              fhxq3mm->GetXaxis()->SetTitle("X position in cm");
+              fhxq3mm->GetYaxis()->SetTitle("Q ");
+          }
+          if (NULL == fhxq5mm)
+          {
+              char strName1[255];
+              char strName2[255];
+              sprintf(strName1, "Q_vs_x_5mm");
+              sprintf(strName2, "Q vs. x of TofD for 5 mm paddles");
+              fhxq5mm = new TH2F(strName1, strName2, 15, 0, 15, 2000, 0., 100.);
+              fhxq5mm->GetXaxis()->SetTitle("X position in cm");
+              fhxq5mm->GetYaxis()->SetTitle("Q ");
+          }
           if (NULL == fhQvsQ[iPlane - 1][iBar - 1])
           {
               char strName[255];
@@ -403,9 +492,33 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           }
           if (NULL == fhQvsTof[iPlane - 1][iBar - 1])
           {
-              char strName[255];
-              sprintf(strName, "Q_vs_ToF_Plane_%d_Bar_%d", iPlane, iBar);
-              fhQvsTof[iPlane - 1][iBar - 1] = new TH2F(strName, "", 1000, -5, 5, 2000, 0., 100.);
+              char strName1[255];
+              char strName2[255];
+              sprintf(strName1, "Q_vs_ToF_Plane_%d_Bar_%d", iPlane, iBar);
+              sprintf(strName2, "Q vs. ToF Plane %d Bar %d", iPlane, iBar);
+              fhQvsTof[iPlane - 1][iBar - 1] = new TH2F(strName1, strName2, 11000, -5, 50, 2000, 0., 100.);
+              fhQvsTof[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("ToF in ns");
+              fhQvsTof[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
+          }
+          if (NULL == fhQvsBeta[iPlane - 1][iBar - 1])
+          {
+              char strName1[255];
+              char strName2[255];
+              sprintf(strName1, "Q_vs_Beta_Plane_%d_Bar_%d", iPlane, iBar);
+              sprintf(strName2, "Q vs. Beta Plane %d Bar %d", iPlane, iBar);
+              fhQvsBeta[iPlane - 1][iBar - 1] = new TH2F(strName1, strName2, 1000, -5, 5, 1000, 0., 100.);
+              fhQvsBeta[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Beta");
+              fhQvsBeta[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("Charge");
+          }
+          if (NULL == fhTofvsQ[iPlane - 1][iBar - 1])
+          {
+              char strName1[255];
+              char strName2[255];
+              sprintf(strName1, "Tof_vs_Q_Plane_%d_Bar_%d", iPlane, iBar);
+              sprintf(strName2, "ToF vs. Q Plane %d Bar %d", iPlane, iBar);
+              fhTofvsQ[iPlane - 1][iBar - 1] = new TH2F(strName1, strName2, 1000, 0., 1000., 1000, -5, 50);
+              fhTofvsQ[iPlane - 1][iBar - 1]->GetYaxis()->SetTitle("ToF in ns");
+              fhTofvsQ[iPlane - 1][iBar - 1]->GetXaxis()->SetTitle("Q");
           }
 	      if (NULL == fhCharge)
           {
@@ -441,7 +554,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           {
               char strName1[255];
               char strName2[255];
-              sprintf(strName1, "Q_vs_x_3mm");
+              sprintf(strName1, "Q_vs_x_3mm_all");
               sprintf(strName2, "Q vs. x for 3 mm paddles");
               fhCharge3mm_vs_x = new TH2F(strName1, strName2, 14, -7.425, 12.825, 2000, 0., 100.);
               fhCharge3mm_vs_x->GetXaxis()->SetTitle("X position in cm");
@@ -451,7 +564,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           {
               char strName1[255];
               char strName2[255];
-              sprintf(strName1, "Q_vs_y_3mm");
+              sprintf(strName1, "Q_vs_y_3mm_all");
               sprintf(strName2, "Q vs. y for 3 mm paddles");
               fhCharge3mm_vs_y = new TH2F(strName1, strName2, 1000, -50, 50, 2000, 0., 100.);
               fhCharge3mm_vs_y->GetXaxis()->SetTitle("Y position in cm");
@@ -461,7 +574,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           {
               char strName1[255];
               char strName2[255];
-              sprintf(strName1, "Q_vs_x_5mm");
+              sprintf(strName1, "Q_vs_x_5mm_all");
               sprintf(strName2, "Q vs. x for 5 mm paddles");
               fhCharge5mm_vs_x = new TH2F(strName1, strName2, 14, -7.425, 12.825, 2000, 0., 100.);
               fhCharge5mm_vs_x->GetXaxis()->SetTitle("X position in cm");
@@ -471,7 +584,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           {
               char strName1[255];
               char strName2[255];
-              sprintf(strName1, "Q_vs_y_5mm");
+              sprintf(strName1, "Q_vs_y_5mm_all");
               sprintf(strName2, "Q vs. y for 5 mm paddles");
               fhCharge5mm_vs_y = new TH2F(strName1, strName2, 1000, -50, 50, 2000, 0., 100.);
               fhCharge5mm_vs_y->GetXaxis()->SetTitle("Y position in cm");
@@ -507,6 +620,37 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
 	          t2t=t2t+2048.*fClockFreq; 
 	          t2l=t2l+2048.*fClockFreq; 			  
 		  }
+
+
+              
+          tot1=t1t - t1l;		      
+          if(tot1<0) {
+            LOG(WARNING) << "Negative ToT "<< tot1<<FairLogger::endl;	
+	        LOG(WARNING) << "times1: " << t1t << " " << t1l << FairLogger::endl;		  
+	      }
+
+	      tot2=t2t - t2l;	
+          if(tot2<0) {
+		    LOG(WARNING) << "Negative ToT "<< tot2<<FairLogger::endl;              
+            LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
+          }
+
+          if(iPlane==4 && iBar==1) {
+			q41=tot1;
+			q42=tot2;
+		  }
+          if(iPlane==3 && iBar==1) {
+		    q31=tot1;
+		    q32=tot2;
+		  }
+
+          // walk corrections
+
+          t1l=t1l-walk(tot1,iPlane,iBar);
+          t2l=t2l-walk(tot2,iPlane,iBar);
+          t1t=t1t-walk(tot1,iPlane,iBar);
+          t2t=t2t-walk(tot2,iPlane,iBar);
+
 	      // calculate position
  	      y[iPlane][iBar]=((t1l+par->GetOffset1())-(t2l+par->GetOffset2()))*par->GetVeff();
           Double_t Pos=y[iPlane][iBar];
@@ -515,38 +659,18 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
           // correction for position dependence only valid in the range -35cm to 35cm
           if (Pos>-350 && Pos<350) {
           
-              tot1=t1t - t1l;		      
-              if(tot1<0) {
-				  LOG(WARNING) << "Negative ToT "<< tot1<<FairLogger::endl;	
-	              LOG(WARNING) << "times1: " << t1t << " " << t1l << FairLogger::endl;		  
-	          }
-
-	          tot2=t2t - t2l;	
-              if(tot2<0) {
-				  LOG(WARNING) << "Negative ToT "<< tot2<<FairLogger::endl;              
-                  LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
-              }
-
-              if(iPlane==4 && iBar==1) {
-				  q41=tot1;
-				  q42=tot2;
-			  }
-              if(iPlane==3 && iBar==1) {
-				  q31=tot1;
-				  q32=tot2;
-			  }
-
               if(timeLos==0) LOG(WARNING) << "Los Time is zero! "<< FairLogger::endl;		  
-			  tof[iPlane][iBar]=(t1l+t2l)/2.-timeLos-par->GetSync();
+//			  tof[iPlane][iBar]=(t1l+t2l)/2.-timeLos-par->GetSync();
 //              LOG(WARNING) << "losTime: " << timeLos << ", Bar: " << (t1l+t2l)/2. << FairLogger::endl;		  
 //              LOG(WARNING) << "par sync: " << par->GetSync() <<" tof: "<< tof[iPlane][iBar]<< FairLogger::endl;		  
 
-	          // walk corrections
-//            t1=t1-walk(tot1);
-//	          t2=t2-walk(tot2);
-  
+	          
+	          
+ 			  tof[iPlane][iBar]=(t1l+t2l)/2.-timeLos-par->GetSync();
+ 
               // time of flight of the bar, check against LOS time that clock did not go out of range
-              t[iPlane][iBar]=(t1l+t2l)/2.;         
+              //t[iPlane][iBar]=(t1l+t2l)/2.;         
+              t[iPlane][iBar]=tof[iPlane][iBar];
 		 	  
               fhTotPm1[iPlane-1][iBar-1]->Fill(tot1);
               fhTotPm2[iPlane-1][iBar-1]->Fill(tot2);
@@ -599,6 +723,8 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
 	
 	          q1=q1*fTofdQ;
 	          q2=q2*fTofdQ;
+
+
 	
 		      Q[iPlane][iBar]=(q1+q2)/2.; 
 		
@@ -613,6 +739,7 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
 		      fhTot1vsPos[iPlane-1][iBar-1]->Fill(Pos, tot1);
 		      fhTot2vsPos[iPlane-1][iBar-1]->Fill(Pos, tot2);
 		      fhQvsTof[iPlane-1][iBar-1]->Fill(tof[iPlane][iBar], Q[iPlane][iBar]);
+		      fhTofvsQ[iPlane-1][iBar-1]->Fill(sqrt(tot1sat*tot2sat), tof[iPlane][iBar] );
 		      
 		      
 		      // Time reference in case on has the master signal in one of the TDC channels. 
@@ -626,15 +753,23 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
       for(Int_t j=1;j<=fPaddlesPerPlane;j++){
 		  if(t[2][j]>0 && t[1][j]>0 && y[2][j]>-35. && y[2][j]<35. && y[1][j]>-35. && y[1][j]<35.) {
 			  t_3mm[2*j-1]=(t[2][j]+t[1][j])/2.;
+			  Q_3mm[2*j-1]=(Q[2][j]+Q[1][j])/2.;			  
+			  fhxq3mm->Fill(2*j-1,Q_3mm[2*j-1]);
 		  }
 		  if(t[1][j]>0 && t[2][j+1]>0 && y[1][j]>-35. && y[1][j]<35. && y[2][j+1]>-35. && y[2][j+1]<35.) {
 			  t_3mm[2*j]=(t[1][j]+t[2][j+1])/2.;
+			  Q_3mm[2*j]=(Q[1][j]+Q[2][j+1])/2.;
+			  fhxq3mm->Fill(2*j,Q_3mm[2*j]);
 		  }
 		  if(t[3][j]>0 && t[4][j]>0 && y[3][j]>-35. && y[3][j]<35. && y[4][j]>-35. && y[4][j]<35.) {
 			  t_5mm[2*j-1]=(t[3][j]+t[4][j])/2.;
+			  Q_5mm[2*j-1]=(Q[3][j]+Q[4][j])/2.;
+			  fhxq5mm->Fill(2*j-1,Q_5mm[2*j-1]);
 		  }
 		  if(t[4][j]>0 && t[3][j+1]>0 && y[4][j]>-35. && y[4][j]<35. && y[3][j+1]>-35. && y[3][j+1]<35.) {
 			  t_5mm[2*j]=(t[4][j]+t[3][j+1])/2.;
+			  Q_5mm[2*j]=(Q[4][j]+Q[3][j+1])/2.;
+			  fhxq5mm->Fill(2*j,Q_5mm[2*j]);
 		  }
 		  
       
@@ -665,6 +800,12 @@ void R3BTofdCal2Hit::Exec(Option_t* option)
               if(i<fNofPlanes){
                   if(t[i][j]>0.&&t[i+1][j]>0.) {
 		              fhTdiffvsQ[i-1][j-1]->Fill(t[i+1][j]-t[i][j], Q[i][j]);
+                      // beta correction
+                      beta=2./(t[i+1][j]-t[i][j]+0.084)/30.;
+                      Double_t bc = beta_corr(beta0, beta, Q[i][j]);
+                      //cout << " Beta correction: " << bc<< endl;	
+	         	      fhQvsBeta[i-1][j-1]->Fill(beta, Q[i][j]);
+		              
 		          }
 	          }
               if(i<fNofPlanes){
@@ -772,10 +913,14 @@ void R3BTofdCal2Hit::FinishTask()
             if (fhTot2vsPos[i][j]) fhTot2vsPos[i][j]->Write();
             if (fhQvsQ[i][j]) fhQvsQ[i][j]->Write();
             if (fhQvsTof[i][j]) fhQvsTof[i][j]->Write();
+            if (fhQvsBeta[i][j]) fhQvsBeta[i][j]->Write();
+            if (fhTofvsQ[i][j]) fhTofvsQ[i][j]->Write();
 	    
 	    }
     }
     if (fhxy) fhxy->Write();
+    if (fhxq3mm) fhxq3mm->Write();
+    if (fhxq5mm) fhxq5mm->Write();
     if (fhCharge) fhCharge->Write();
     if (fhCharge3mm) fhCharge3mm->Write();
     if (fhCharge5mm) fhCharge5mm->Write();
@@ -789,35 +934,19 @@ void R3BTofdCal2Hit::FinishTask()
 
 
 
-Double_t R3BTofdCal2Hit::walk(Double_t Q)
+Double_t R3BTofdCal2Hit::walk(Double_t Q, Int_t plane, Int_t bar)
 {
-    Double_t par1,par2,par3,par4,par5;
     Double_t y=0;
        
-    Int_t voltage=600;    
-
-   if(voltage==500){
-     par1=1.64344e+01;        
-     par2=2.84000e-01;
-     par3= 3.47659e+02  ;    
-     par4= -2.70050e-01 ;   
-     par5= 3.61515e-04  ;  
-    }
-    
-  
-    
-    if(voltage==600){
-     par1= 1.22606e+01;   
-     par2= 3.12697e-01  ;
-     par3= 4.40109e+02  ;    
-     par4=-1.86328e-01  ;   
-     par5= 1.49519e-04  ;  
-    
-    }
-
-    if(Q>0 && Q<430)   y=-30.2+par1*TMath::Power(Q,par2)+par3/Q+par4*Q+par5*Q*Q; 
-    else y=0;
-    
+    y=walkPar[plane][bar][0]*TMath::Power(Q,walkPar[plane][bar][1])+walkPar[plane][bar][2]/Q+
+    walkPar[plane][bar][3]*Q+walkPar[plane][bar][4]*Q*Q+walkPar[plane][bar][5]; 
+/*
+    cout<<"plane: "<<plane<<" bar: "<<bar<<endl;
+    cout<<"ToT: "<<Q<<" walk: "<<y<<endl;
+    cout<<"par[0]: "<<walkPar[plane][bar][0]<<" par[1]: "<< walkPar[plane][bar][1]<<" par[2]: "<< walkPar[plane][bar][2] 
+    <<"par[3]: "<<walkPar[plane][bar][3]<<" par[4]: "<< walkPar[plane][bar][4]<< " par[5]: "<< walkPar[plane][bar][5]<<endl;
+*/    
+    if(y>100) y=0;
     return y;
 }
 
@@ -874,5 +1003,60 @@ Double_t R3BTofdCal2Hit::saturation(Double_t x)
 
 
 }
+Double_t R3BTofdCal2Hit::beta_corr(Double_t beta0, Double_t beta, Double_t charge)
+{
+   // define material "plastic"
+   Double_t dx = 0.5; //cm
+   Double_t Z  = 8./3. ;
+   Double_t A  = 14./3. ;
+   Double_t rho = 1.03; // g/cm3
+   Double_t I   = 64.7e-6; // MeV
+   Double_t PI  = 3.141592654;
+   Double_t dE0=0.;
+   Double_t dE1=0.;
+   Double_t AA=0.;
+   Double_t B =0.;
+   Double_t q=0.;
+   Double_t qm1=0.;
+   Double_t Bqlnq =0.;
+   Double_t lnq=0.;
 
+   // constants
+   Double_t N_AVOGADRO=6.0221367e23;  // mol-1
+   Double_t CLASSICAL_ELECTRON_RADIUS=2.81794092e-13; // cm
+   Double_t MASS_ELECTRON_C2=0.51099906;     // MeV
+
+// calculate energy loss for beta0
+   beta=beta0;
+   AA = 4.0 * PI * N_AVOGADRO * CLASSICAL_ELECTRON_RADIUS * 
+   CLASSICAL_ELECTRON_RADIUS * rho * MASS_ELECTRON_C2 * Z / A * dx;
+
+   B = log(2. * MASS_ELECTRON_C2 / I);
+
+   q = beta*beta;
+   qm1 = q - 1;
+   lnq = log(q / -qm1);
+   Bqlnq   = B - q + lnq;
+
+   dE0 = AA * charge * charge / q * Bqlnq;
+   
+// calculate energy loss for beta
+   beta=beta;
+   AA = 4.0 * PI * N_AVOGADRO * CLASSICAL_ELECTRON_RADIUS * 
+   CLASSICAL_ELECTRON_RADIUS * rho * MASS_ELECTRON_C2 * Z / A * dx;
+
+   B = log(2. * MASS_ELECTRON_C2 / I);
+
+   q = beta*beta;
+   qm1 = q - 1;
+   lnq = log(q / -qm1);
+   Bqlnq   = B - q + lnq;
+
+   dE1 = AA * charge * charge / q * Bqlnq;
+   
+   
+
+   return dE0/dE1;
+   
+}
 ClassImp(R3BTofdCal2Hit)

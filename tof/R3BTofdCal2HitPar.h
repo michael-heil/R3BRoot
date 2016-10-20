@@ -141,11 +141,6 @@ class R3BTofdCal2HitPar : public FairTask
     {
         fParaFile = file;
     }
-    /**
-     * Method for walk calculation.
-     */
-    virtual Double_t walk(Double_t Q);
-
 
     /**
      * Method for calculation of saturation.
@@ -162,6 +157,11 @@ class R3BTofdCal2HitPar : public FairTask
      * Method for calculation of veff.
      */
     virtual void calcVeff();
+    
+    /**
+     * Method for walk calculation.
+     */
+    virtual Double_t walk(Double_t Q, Int_t plane, Int_t bar);
 
     /**
      * Method for calculation of position dependence of scintillator.
@@ -191,6 +191,7 @@ class R3BTofdCal2HitPar : public FairTask
     Double_t fClockFreq;     /**< Clock cycle in [ns]. */
     Double_t fTofdY;
     Double_t fTofdQ;
+    Double_t walkPar[N_PLANE_MAX][N_PADDLE_MAX][6];
     TString fParaFile;
 
 // arrays of control histograms

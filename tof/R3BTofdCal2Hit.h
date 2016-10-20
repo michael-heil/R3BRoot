@@ -96,9 +96,13 @@ class R3BTofdCal2Hit : public FairTask
     /**
      * Method for walk calculation.
      */
-    virtual Double_t walk(Double_t Q);
+    virtual Double_t walk(Double_t Q, Int_t plane, Int_t bar);
 
-
+    /**
+     * Method for Bethe-Bloch calculation.
+     */
+    virtual Double_t beta_corr(Double_t beta0, Double_t beta, Double_t charge);
+    
     /**
      * Method for calculation of saturation.
      */
@@ -125,7 +129,10 @@ class R3BTofdCal2Hit : public FairTask
     Double_t fTofdQ;
     UInt_t fNofPlanes;  
     UInt_t fPaddlesPerPlane; /**< Number of paddles per plane. */    
-
+    Double_t walkPar[N_PLANE_MAX][N_PADDLE_MAX][6];
+    
+    
+    
 // arrays of control histograms
     TH1F* fhPos[N_PLANE_MAX][N_PADDLE_MAX]; 
     TH1F* fhTotPm1[N_PLANE_MAX][N_PADDLE_MAX]; 
@@ -145,9 +152,14 @@ class R3BTofdCal2Hit : public FairTask
     TH2F* fhTot2vsPos[N_PLANE_MAX][N_PADDLE_MAX];   
     TH2F* fhQvsQ[N_PLANE_MAX][N_PADDLE_MAX];   
     TH2F* fhQvsTof[N_PLANE_MAX][N_PADDLE_MAX];   
+    TH2F* fhQvsBeta[N_PLANE_MAX][N_PADDLE_MAX];   
+    TH2F* fhTofvsQ[N_PLANE_MAX][N_PADDLE_MAX];   
     TH2F* fhSqrtQvsPos[N_PLANE_MAX][N_PADDLE_MAX];   
+    TH2F* fhVsQ[N_PLANE_MAX][N_PADDLE_MAX];   
     
-    TH2F* fhxy;   
+    TH2F* fhxy; 
+    TH2F* fhxq3mm;      
+    TH2F* fhxq5mm;      
     TH1F* fhCharge3mm; 
     TH1F* fhCharge5mm; 
     TH2F* fhCharge3mm_vs_x;

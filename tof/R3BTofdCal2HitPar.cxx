@@ -147,6 +147,24 @@ InitStatus R3BTofdCal2HitPar::Init()
     if (NULL == fCalItemsLos)
         FairLogger::GetLogger()->Fatal(MESSAGE_ORIGIN, "Branch LosCal not found");
 
+    // read in walk parameter
+    ifstream a_file ( "walk_run054.dat");
+    if(!a_file){
+        cout<<"Could not open file!!!"<<endl;
+        exit(1);
+    }
+    Int_t p, b, dummy;
+    Double_t par;
+          
+    while(!a_file.eof()){ 
+       for(Int_t j=0;j<=5;j++){   
+           a_file>> p >> b >> dummy >> par;
+           walkPar[p][b][j]=par;
+           cout<<"Reading walk Parameter, plane "<<p<< " bar "<<b<<" #"<<j<<" : "<<walkPar[p][b][j]<<endl;          
+       }
+    }
+    a_file.close();	 
+
 
     return kSUCCESS;
 }
@@ -283,9 +301,9 @@ void R3BTofdCal2HitPar::Exec(Option_t* option)
 	    // for runs starting at 025:
             //if (iPlane<3) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 100000, 10400., 10600.);
             //if (iPlane>2) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 100000, 12400., 12600.);            
-	    // for runs starting at 054:
-            //if (iPlane<3) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 20000,  15700., 15800.);
-            //if (iPlane>2) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 20000,  6800., 6900.);            
+	     // for runs starting at 054:
+            if (iPlane<3) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 20000,  15700., 15800.);
+            if (iPlane>2) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 20000,  6800., 6900.);            
 	    // for runs starting at 071:
             //if (iPlane<3) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 40000,  6850., 7050.);
             //if (iPlane>2) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 20000,  11300., 11400.);            
@@ -295,7 +313,7 @@ void R3BTofdCal2HitPar::Exec(Option_t* option)
 	    // for runs starting at 137:
             //fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 50000, 4400., 4500.);
 	    // for runs starting at 154:
-            fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 50000, 900., 1100.);
+            //fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 50000, 900., 1100.);
  	    // for runs starting at 160:
             //if (iPlane<3) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 50000, 13800., 13900.);
             //if (iPlane>2) fhTsync[iPlane - 1][iBar - 1] = new TH1F(strName, "", 50000, 13800., 13900.);            
@@ -337,6 +355,12 @@ void R3BTofdCal2HitPar::Exec(Option_t* option)
             LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
         }
 
+        // walk corrections
+
+        t1l=t1l-walk(tot1,iPlane,iBar);
+        t2l=t2l-walk(tot2,iPlane,iBar);
+        t1t=t1t-walk(tot1,iPlane,iBar);
+        t2t=t2t-walk(tot2,iPlane,iBar);
 
 
         // correction for saturation of PMT
@@ -354,11 +378,6 @@ void R3BTofdCal2HitPar::Exec(Option_t* option)
 	
         //Time differences of one paddle **************************
         
-	// walk corrections
-//        t1=t1-walk(tot1);
-//        t2=t2-walk(tot2);
-//        LOG(WARNING) << "Plane "<<iPlane << " Bar "<<iBar <<" wlk1 "<< walk(tot1)<<" wlk2 "<<walk(tot2)<<FairLogger::endl;
-//        LOG(WARNING) << "Plane "<<iPlane << " Bar "<<iBar <<" t1 "<< t1<<" t2 "<< t2<<FairLogger::endl;
         tdiff=t1l-t2l;
         fhTdiff[iPlane - 1][iBar - 1]->Fill(tdiff);
  
@@ -708,38 +727,22 @@ void R3BTofdCal2HitPar::doubleExp(TH2F *histo, Double_t min, Double_t max, Doubl
     delete f2; 
 }
 
-
-Double_t R3BTofdCal2HitPar::walk(Double_t Q)
+Double_t R3BTofdCal2HitPar::walk(Double_t Q, Int_t plane, Int_t bar)
 {
-    Double_t par1,par2,par3,par4,par5;
     Double_t y=0;
        
-    Int_t voltage=600;    
-
-   if(voltage==500){
-     par1=1.64344e+01;    
-     par2=2.84000e-01;
-     par3= 3.47659e+02  ;    
-     par4= -2.70050e-01 ;   
-     par5= 3.61515e-04  ;  
-    }
-    
-  
-    
-    if(voltage==600){
-     par1= 1.22606e+01;   
-     par2= 3.12697e-01  ;
-     par3= 4.40109e+02  ;    
-     par4=-1.86328e-01  ;   
-     par5= 1.49519e-04  ;  
-    
-    }
-
-    if(Q>0 && Q<430)   y=-30.2+par1*TMath::Power(Q,par2)+par3/Q+par4*Q+par5*Q*Q; 
-    else y=0;
-    
+    y=walkPar[plane][bar][0]*TMath::Power(Q,walkPar[plane][bar][1])+walkPar[plane][bar][2]/Q+
+    walkPar[plane][bar][3]*Q+walkPar[plane][bar][4]*Q*Q+walkPar[plane][bar][5]; 
+/*
+    cout<<"plane: "<<plane<<" bar: "<<bar<<endl;
+    cout<<"ToT: "<<Q<<" walk: "<<y<<endl;
+    cout<<"par[0]: "<<walkPar[plane][bar][0]<<" par[1]: "<< walkPar[plane][bar][1]<<" par[2]: "<< walkPar[plane][bar][2] 
+    <<"par[3]: "<<walkPar[plane][bar][3]<<" par[4]: "<< walkPar[plane][bar][4]<< " par[5]: "<< walkPar[plane][bar][5]<<endl;
+*/    
+    if(y>100) y=0;
     return y;
 }
+
 
 Double_t R3BTofdCal2HitPar::saturation(Double_t x)
 {

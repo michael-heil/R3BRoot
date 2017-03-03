@@ -113,7 +113,13 @@ class R3BOnlineSpectra : public FairTask
     TClonesArray* fCalItemsTofd;                   /**< Array with cal items. */
     TClonesArray* fMappedItemsPspx;                    /**< Array with mapped items. */
     TClonesArray* fCalItemsPspx;                    /**< Array with cal items. */
-    
+    TClonesArray* fMappedItemsFi1;                 /**< Array with mapped items. */
+    TClonesArray* fHitItemsFi1;                    /**< Array with cal items. */
+    TClonesArray* fMappedItemsFi5;                 /**< Array with mapped items. */
+    TClonesArray* fHitItemsFi5;                    /**< Array with cal items. */
+    TClonesArray* fMappedItemsFi6;                 /**< Array with mapped items. */
+    TClonesArray* fHitItemsFi6;                    /**< Array with cal items. */
+
 	// check for trigger should be done globablly (somewhere else)
     R3BEventHeader* header;                     /**< Event header. */
     Int_t fTrigger;                             /**< Trigger value. */
@@ -121,6 +127,7 @@ class R3BOnlineSpectra : public FairTask
     UInt_t fNofPlanes;  
     UInt_t fPaddlesPerPlane; /**< Number of paddles per plane. */    
 
+    Int_t fNEvents;         /**< Event counter. */
 
     UInt_t fNofDetectors;  /**< Number of detectors. */
     UInt_t fNofChannels;   /**< Number of channels per detector. */    
@@ -139,10 +146,6 @@ class R3BOnlineSpectra : public FairTask
     TH1F* fhTotPm1[N_PLANE_MAX][N_PADDLE_MAX]; 
     TH1F* fhTotPm2[N_PLANE_MAX][N_PADDLE_MAX]; 
 
-    TH1F *fh_cherenkovLos1;    
-    TH1F *fh_cherenkovLos2;    
-    TH1F *fh_cherenkovLos3;    
-
     
     TH1F *fh_pspx_strips_psp[N_PSPX];
     TH1F *fh_pspx_energy_psp[N_PSPX];
@@ -157,7 +160,27 @@ class R3BOnlineSpectra : public FairTask
     TH2F *fh_pspx_cor_y_strips;
     TH2F *fh_pspx_cor_x_energy;
     TH2F *fh_pspx_cor_y_energy;
-    
+
+    TH1F *fh_Fi1_channels;
+    TH1F *fh_Fi1_fibers;
+    TH2F *fh_Fi1_multihit;
+    TH2F *fh_Fi1_ToT;
+    TH2F *fh_Fi1_ToTvsTime;
+   
+    TH1F *fh_Fi5_channels;
+    TH1F *fh_Fi5_fibers;
+    TH2F *fh_Fi5_multihit;
+    TH2F *fh_Fi5_ToT;
+    TH2F *fh_Fi5_ToTvsTime;
+   
+    TH1F *fh_Fi6_channels;
+    TH1F *fh_Fi6_fibers;
+    TH2F *fh_Fi6_multihit;
+    TH2F *fh_Fi6_ToT;
+    TH2F *fh_Fi6_ToTvsTime;
+   
+ 
+  
   public:
     ClassDef(R3BOnlineSpectra, 1)
 };

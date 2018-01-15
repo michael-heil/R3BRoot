@@ -34,7 +34,7 @@
 #define IS_NAN(x) TMath::IsNaN(x)
 
 R3BPtofMapped2Cal::R3BPtofMapped2Cal()
-	: FairTask("TofdTcal", 1)
+	: FairTask("PtofTcal", 1)
 	, fMappedItems(NULL)
 	, fCalItems(new TClonesArray("R3BPaddleCalData"))
 	, fNofCalItems(0)
@@ -57,9 +57,12 @@ R3BPtofMapped2Cal::R3BPtofMapped2Cal(const char* name, Int_t iVerbose)
 
 R3BPtofMapped2Cal::~R3BPtofMapped2Cal()
 {
+    if (fCalItems)
+    {
 	delete fCalItems;
 	fCalItems = NULL;
 	fNofCalItems = 0;
+    }
 }
 
 InitStatus R3BPtofMapped2Cal::Init()
@@ -122,18 +125,20 @@ void R3BPtofMapped2Cal::Exec(Option_t* option)
 	for (Int_t ihit = 0; ihit < nHits; ihit++)
 	{
 		R3BPaddleTamexMappedData* mapped = (R3BPaddleTamexMappedData*)fMappedItems->At(ihit);
-		R3BPaddleCalData*            cal = NULL;
+
 
 		Int_t iPlane = mapped->GetPlaneId(); // 1..n; no need to check range
 		Int_t iBar   = mapped->GetBarId();   // 1..n
+//		LOG(ERROR) << "R3BPtofMapped2Cal::Exec : Plane: " << 	iPlane << ", Bar: " << iBar  << FairLogger::endl;
+
+		R3BPaddleCalData*  cal  = new ((*fCalItems)[fNofCalItems++]) R3BPaddleCalData(iPlane,iBar);
 
 		// convert times to ns
 		for (int tube=0;tube<2;tube++) // PM1 and PM2
 			for (int edge=0;edge<2;edge++) // loop over leading and trailing edge
 			{
 				// check if there is indeed data for this tube and edge:
-				if (mapped->GetFineTime(tube , edge)==0) continue;
-
+				
 				// fetch calib params:
 				R3BTCalModulePar* par = fTcalPar->GetModuleParAt(iPlane, iBar, tube*2 + edge + 1); // 1..4
 				if (!par)
@@ -143,19 +148,17 @@ void R3BPtofMapped2Cal::Exec(Option_t* option)
 					continue;
 				}
 
-				// create CAL item only if data AND calib params are available:
-				if (!cal) 
-					cal = new ((*fCalItems)[fNofCalItems]) R3BPaddleCalData(iPlane,iBar);
-
 
 				// Convert TDC to [ns] ...
+				if (mapped->GetFineTime(tube , edge) == -1) continue;
+				
 				Double_t time_ns = par->GetTimeVFTX( mapped->GetFineTime(tube , edge) );
 
 				if (time_ns < 0. || time_ns > fClockFreq )
 				{
 					LOG(ERROR) << 
 					"R3BPtofMapped2Cal::Exec : bad time in ns: Plane= " << iPlane << 
-					", bar= " << iBar << ",tube= " << (tube+1) <<
+					", bar= " << iBar << ",tube= " << (tube+1) << ",edge= " << edge <<
 					", time in channels = " << mapped->GetFineTime(tube,edge) <<
 					", time in ns = " << time_ns  << FairLogger::endl;
 					continue;
@@ -163,8 +166,9 @@ void R3BPtofMapped2Cal::Exec(Option_t* option)
 		
 				// ... and add clock time
 				time_ns = fClockFreq - time_ns + mapped->GetCoarseTime(tube , edge) * fClockFreq;
-
+                LOG(DEBUG) << "Test: Bar: "<<iBar<<"  tube= "<<tube<<"  edge= "<<edge<<"  time in ns = " << time_ns  << FairLogger::endl;
 				cal->SetTime(tube , edge , time_ns);
+
 			}
 	}
 }

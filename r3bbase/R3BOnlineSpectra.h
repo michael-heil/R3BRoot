@@ -10,6 +10,7 @@
 #define R3BONLINESPECTRA
 #define N_PLANE_MAX 100
 #define N_PADDLE_MAX 100
+#define N_PADDLE_MAX_PTOF 100
 #define N_PSPX 4
 
 #include "FairTask.h"
@@ -111,8 +112,9 @@ class R3BOnlineSpectra : public FairTask
     TClonesArray* fCalItemsLos;                    /**< Array with cal items. */
     TClonesArray* fMappedItemsTofd;                /**< Array with mapped items. */
     TClonesArray* fCalItemsTofd;                   /**< Array with cal items. */
-    TClonesArray* fMappedItemsPspx;                    /**< Array with mapped items. */
-    TClonesArray* fCalItemsPspx;                    /**< Array with cal items. */
+    TClonesArray* fMappedItemsPspx;                /**< Array with mapped items. */
+    TClonesArray* fCalItemsPspx;                   /**< Array with cal items. */
+    TClonesArray* fCalItemsPtof;                   /**< Array with cal items. */
     
 	// check for trigger should be done globablly (somewhere else)
     R3BEventHeader* header;                     /**< Event header. */
@@ -136,12 +138,16 @@ class R3BOnlineSpectra : public FairTask
 
     TH1F *fh_tofd_channels[N_PLANE_MAX];    
 
-    TH1F* fhTotPm1[N_PLANE_MAX][N_PADDLE_MAX]; 
-    TH1F* fhTotPm2[N_PLANE_MAX][N_PADDLE_MAX]; 
-
-    TH1F *fh_cherenkovLos1;    
-    TH1F *fh_cherenkovLos2;    
-    TH1F *fh_cherenkovLos3;    
+    TH1F* fh_tofd_TotPm1[N_PLANE_MAX][N_PADDLE_MAX]; 
+    TH1F* fh_tofd_TotPm2[N_PLANE_MAX][N_PADDLE_MAX]; 
+ 
+ 
+    TH1F *fh_ptof_channels; 
+    TH1F *fh_ptof_channels_cut; 
+    TH1F *fh_ptof_test1;   
+    TH1F *fh_ptof_test2;   
+    TH1F* fh_ptof_TotPm1[N_PADDLE_MAX_PTOF]; 
+    TH1F* fh_ptof_TotPm2[N_PADDLE_MAX_PTOF]; 
 
     
     TH1F *fh_pspx_strips_psp[N_PSPX];

@@ -19,6 +19,7 @@
 #include "R3BPspxCalData.h"
 #include "R3BEventHeader.h"
 #include "R3BTCalEngine.h"
+#include "R3BTCalEngine.h"
 
 #include "FairRunAna.h"
 #include "FairRunOnline.h"
@@ -39,6 +40,7 @@ R3BOnlineSpectra::R3BOnlineSpectra()
     , fCalItemsLos(NULL)
     , fCalItemsTofd(NULL)
     , fCalItemsPspx(NULL)
+    , fCalItemsPtof(NULL)
     , fMappedItemsLos(NULL)
     , fMappedItemsTofd(NULL)
     , fMappedItemsPspx(NULL)
@@ -58,6 +60,7 @@ R3BOnlineSpectra::R3BOnlineSpectra(const char* name, Int_t iVerbose)
     , fCalItemsLos(NULL)
     , fCalItemsTofd(NULL)
     , fCalItemsPspx(NULL)
+    , fCalItemsPtof(NULL)
     , fMappedItemsLos(NULL)
     , fMappedItemsTofd(NULL)
     , fMappedItemsPspx(NULL)
@@ -146,34 +149,75 @@ InitStatus R3BOnlineSpectra::Init()
         for (Int_t j = 0; j < fPaddlesPerPlane; j++)
         {
             sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_1", i, j);
-            fhTotPm1[i][j] = new TH1F(strName, "", 5000, 0., 500.);
+            fh_tofd_TotPm1[i][j] = new TH1F(strName, "", 5000, 0., 500.);
             cTofd[i]->cd(2*j+1);
-            fhTotPm1[i][j]->Draw();
+            fh_tofd_TotPm1[i][j]->Draw();
             sprintf(strName, "ToT_Plane_%d_Bar_%d_PM_2", i, j);
-            fhTotPm2[i][j] = new TH1F(strName, "", 5000, 0., 500.);
+            fh_tofd_TotPm2[i][j] = new TH1F(strName, "", 5000, 0., 500.);
             cTofd[i]->cd(2*j+2);
-            fhTotPm1[i][j]->Draw();
+            fh_tofd_TotPm1[i][j]->Draw();
            
         }
 	}
 
     fCalItemsTofd = (TClonesArray*)mgr->GetObject("TofdCal");
 
-    TCanvas *cCherenkov = new TCanvas("Cherenkov", "Cherenkov", 10, 10, 500, 500);
-    cCherenkov->Divide(1, 3);
- 
-    fh_cherenkovLos1 = new TH1F("cherenkovLos1", "Cherenkov 1 - Los", 10000, -100., 100.); 
-    fh_cherenkovLos2 = new TH1F("cherenkovLos2", "Cherenkov 2 - Los", 10000, -100., 100.); 
-    fh_cherenkovLos3 = new TH1F("cherenkovLos3", "Cherenkov average - Los", 10000, -100., 100.); 
+
+//Ptof detector
+
+    TCanvas *cPtof_plane = new TCanvas("Ptof_plane", "Ptof plane", 10, 10, 500, 500);
+    cPtof_plane->Divide(1, 2);
+	
+    fh_ptof_channels = new TH1F("Ptof_channels", "Ptof channels", 65, 0., 65.);
+    cPtof_plane->cd(1);
+    fh_ptof_channels->Draw();
+
+    fh_ptof_channels_cut = new TH1F("Ptof_channels_cut", "Ptof channels with cut", 65, 0., 65.);
+    cPtof_plane->cd(2);
+    fh_ptof_channels_cut->Draw();
+    run->AddObject(cPtof_plane);
+
+    TCanvas *cPtof_test = new TCanvas("Ptof_test", "Ptof test", 10, 10, 500, 500);
+    cPtof_test->Divide(1, 1);
+	
+    fh_ptof_test1 = new TH1F("Ptof_test1", "Ptof test1", 1000, 0., 100.);
+    fh_ptof_test2 = new TH1F("Ptof_test2", "Ptof test2", 1000, 0., 100.);
+    cPtof_test->cd(1);
+    fh_ptof_test1->Draw();
+ //   cPtof_test->cd(2);
+//    fh_ptof_test2->Draw();
+    
+    run->AddObject(cPtof_test);
    
-    cCherenkov->cd(1);
-    fh_cherenkovLos1->Draw();
-    cCherenkov->cd(2);
-    fh_cherenkovLos2->Draw();
-    cCherenkov->cd(3);
-    fh_cherenkovLos3->Draw();
-    cCherenkov->cd(0);
-    run->AddObject(cCherenkov);
+   
+    TCanvas* cPtof1;
+    cPtof1 = new TCanvas("Ptof1", "Ptof1", 10, 10, 500, 500);
+    cPtof1->Divide(8,8);
+    for (Int_t j = 1; j < 100; j++){
+        char strName[255];
+        sprintf(strName, "ToT_Bar_%d_PM_1", j);
+        fh_ptof_TotPm1[j] = new TH1F(strName, "", 1000, 0., 100.);
+        cPtof1->cd(j);
+        fh_ptof_TotPm1[j]->Draw();           
+    }
+    run->AddObject(cPtof1);
+    
+    TCanvas* cPtof2;
+    cPtof2 = new TCanvas("Ptof2", "Ptof2", 10, 10, 500, 500);
+    cPtof2->Divide(8,8);
+    for (Int_t j = 1; j < 100; j++){
+        char strName[255];
+        sprintf(strName, "ToT_Bar_%d_PM_2", j);
+        fh_ptof_TotPm2[j] = new TH1F(strName, "", 1000, 0., 100.);
+        cPtof2->cd(j);
+        fh_ptof_TotPm2[j]->Draw();           
+    }
+    run->AddObject(cPtof2);
+	
+
+    fCalItemsPtof = (TClonesArray*)mgr->GetObject("PtofCal");
+
+
 
     // Pspx Data
     fMappedItemsPspx = (TClonesArray*)mgr->GetObject("PspxMappedData");
@@ -344,8 +388,8 @@ void R3BOnlineSpectra::Exec(Option_t* option)
     	  R3BLosCalData *calData = (R3BLosCalData*)fCalItemsLos->At(ihit);
 
           Int_t iDet=calData->GetDetector();
-          LOG(DEBUG) << "test1 : "<<flosOffsetX<<"  "<<flosOffsetY<<"  "<<flosVeffX<<"  "<<flosVeffY<<FairLogger::endl;
-	      LOG(DEBUG) <<"test2 : "<<calData->fTime_r_ns<<FairLogger::endl;
+          //LOG(DEBUG) << "test1 : "<<flosOffsetX<<"  "<<flosOffsetY<<"  "<<flosVeffX<<"  "<<flosVeffY<<FairLogger::endl;
+	      //LOG(DEBUG) <<"test2 : "<<calData->fTime_r_ns<<FairLogger::endl;
 
           if(iDet==1){
 	          fh_los_tres->Fill((calData->fTime_r_ns+calData->fTime_l_ns)/2. -     		
@@ -354,16 +398,8 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 	                 (calData->fTime_b_ns-calData->fTime_t_ns-flosOffsetY)*flosVeffY);
               timeLos=(calData->fTime_r_ns+calData->fTime_l_ns+calData->fTime_t_ns+calData->fTime_b_ns)/4.;		 
 	      }
-	      else{
-              cher1=calData->fTime_cherenkov_l_ns;
-	          cher2=calData->fTime_cherenkov_r_ns;	   
-	      }	
       }
-       
-      if(cher1!=0.) fh_cherenkovLos1->Fill(cher1-timeLos);
-      if(cher2!=0.) fh_cherenkovLos2->Fill(cher2-timeLos);
-      if(cher1!=0. && cher2!=0)fh_cherenkovLos3->Fill((cher1+cher2)/2.-timeLos);
-      			
+             			
 			  
     }
 
@@ -439,10 +475,137 @@ void R3BOnlineSpectra::Exec(Option_t* option)
               LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
           }
  
-          fhTotPm1[iPlane-1][iBar-1]->Fill(tot1);
-          fhTotPm2[iPlane-1][iBar-1]->Fill(tot2);
+          fh_tofd_TotPm1[iPlane-1][iBar-1]->Fill(tot1);
+          fh_tofd_TotPm2[iPlane-1][iBar-1]->Fill(tot2);
         	
       }	
+
+    }
+
+    if(fCalItemsPtof)
+    {
+      Double_t tot1=0.;
+      Double_t tot2=0.;
+      Double_t t1l=0.;
+      Double_t t2l=0.;
+      Double_t t1t=0.;
+      Double_t t2t=0.;
+      Bool_t bar60=false;
+      Bool_t bar61=false;
+      Bool_t bar62=false;
+      Bool_t bar63=false;
+      
+      Int_t nHits = fCalItemsPtof->GetEntriesFast();    
+      LOG(DEBUG) << "nHits: " << nHits << FairLogger::endl;
+      for (Int_t ihit = 0; ihit < nHits; ihit++)     
+      {
+    	  R3BPaddleCalData *hit = (R3BPaddleCalData*)fCalItemsPtof->At(ihit);
+          if (!hit) continue; // should not happen
+
+          Int_t iBar  = hit->GetBar();    // 1..n
+                 // get all times of one bar
+          t1l=hit->fTime1L_ns;
+          t2l=hit->fTime2L_ns;
+          t1t=hit->fTime1T_ns;
+          t2t=hit->fTime2T_ns;
+//          if(!(t1l>0 && t2l>0 && t1t>0 && t2t>0)) continue;
+          fh_ptof_channels->Fill(iBar);
+      LOG(DEBUG) << "Bar: " << iBar << FairLogger::endl;
+      LOG(DEBUG) << "times PM1: " << t1l<<"  "<<t1t<<"  "<<t1t-t1l << FairLogger::endl;
+      LOG(DEBUG) << "times PM2: " << t2l<<"  "<<t2t<<"  "<<t2t-t2l << FairLogger::endl;
+          if(iBar==60) bar60=true;
+          if(iBar==61) bar61=true;
+          if(iBar==62) bar62=true;
+          if(iBar==63) bar63=true;
+          
+	      // calculate time over threshold and check if clock counter went out of range
+          while(t1t - t1l < 0.) {
+	          t1t=t1t+2048.*fClockFreq; 
+	      }
+
+          while(t2t-t2l < 0.) {
+	          t2t=t2t+2048.*fClockFreq; 
+          }
+	      while(t1l-timeLos<0.){
+	          t1t=t1t+2048.*fClockFreq; 
+	          t1l=t1l+2048.*fClockFreq; 
+	          t2t=t2t+2048.*fClockFreq; 
+	          t2l=t2l+2048.*fClockFreq; 			  
+		  }
+       
+          tot1=t1t - t1l;		      
+          if(tot1<0) {
+	          LOG(WARNING) << "Negative ToT "<< tot1<<FairLogger::endl;	
+	          LOG(WARNING) << "times1: " << t1t << " " << t1l << FairLogger::endl;		  
+	      }
+
+          tot2=t2t - t2l;	
+          if(tot2<0) {
+              LOG(WARNING) << "Negative ToT "<< tot2<<FairLogger::endl;              
+              LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
+          }
+ 
+//          fh_ptof_TotPm1[iBar]->Fill(tot1);
+//          fh_ptof_TotPm2[iBar]->Fill(tot2);
+          if(iBar==33) fh_ptof_test1->Fill(sqrt(tot1*tot1));	
+      }	
+      
+      
+      //once again
+      
+      
+      nHits = fCalItemsPtof->GetEntriesFast();    
+//      LOG(DEBUG) << "nHits: " << nHits << FairLogger::endl;
+      for (Int_t ihit = 0; ihit < nHits; ihit++)     
+      {
+    	  R3BPaddleCalData *hit = (R3BPaddleCalData*)fCalItemsPtof->At(ihit);
+          if (!hit) continue; // should not happen
+
+          Int_t iBar  = hit->GetBar();    // 1..n
+                 // get all times of one bar
+          t1l=hit->fTime1L_ns;
+          t2l=hit->fTime2L_ns;
+          t1t=hit->fTime1T_ns;
+          t2t=hit->fTime2T_ns;
+
+          
+	      // calculate time over threshold and check if clock counter went out of range
+          while(t1t - t1l < 0.) {
+	          t1t=t1t+2048.*fClockFreq; 
+	      }
+
+          while(t2t-t2l < 0.) {
+	          t2t=t2t+2048.*fClockFreq; 
+          }
+	      while(t1l-timeLos<0.){
+	          t1t=t1t+2048.*fClockFreq; 
+	          t1l=t1l+2048.*fClockFreq; 
+	          t2t=t2t+2048.*fClockFreq; 
+	          t2l=t2l+2048.*fClockFreq; 			  
+		  }
+       
+          tot1=t1t - t1l;		      
+          if(tot1<0) {
+//	          LOG(WARNING) << "Negative ToT "<< tot1<<FairLogger::endl;	
+//	          LOG(WARNING) << "times1: " << t1t << " " << t1l << FairLogger::endl;		  
+	      }
+
+          tot2=t2t - t2l;	
+          if(tot2<0) {
+//              LOG(WARNING) << "Negative ToT "<< tot2<<FairLogger::endl;              
+//              LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
+          }
+ 
+
+          if(bar60 && bar61 && bar62 && bar63){
+             fh_ptof_TotPm1[iBar]->Fill(tot1);
+             fh_ptof_TotPm2[iBar]->Fill(tot2);
+	         if(iBar==7) fh_ptof_test2->Fill(sqrt(tot1*tot2));	
+             fh_ptof_channels_cut->Fill(iBar);
+
+	      }
+
+      }
 
    }
 
@@ -557,6 +720,10 @@ void R3BOnlineSpectra::FinishEvent()
     if (fCalItemsTofd)
     {
         fCalItemsTofd->Clear();
+    }
+    if (fCalItemsPtof)
+    {
+        fCalItemsPtof->Clear();
     }
     if (fMappedItemsLos)
     {

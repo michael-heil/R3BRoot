@@ -26,6 +26,7 @@ ${R3BROOT_SOURCE_DIR}/r3bdata/landData
 ${R3BROOT_SOURCE_DIR}/r3bdata/losData
 ${R3BROOT_SOURCE_DIR}/r3bdata/mfiData
 ${R3BROOT_SOURCE_DIR}/r3bdata/fi4Data
+${R3BROOT_SOURCE_DIR}/r3bdata/fibData
 ${R3BROOT_SOURCE_DIR}/r3bdata/pspData
 ${R3BROOT_SOURCE_DIR}/r3bdata/neulandData
 ${R3BROOT_SOURCE_DIR}/r3bdata/actarData
@@ -119,6 +120,8 @@ fi4Data/R3BFi4HitItem.cxx
 tofData/R3BTofdHitData.cxx
 fi4Data/R3BFi4Point.cxx
 ptofData/R3BPtofHit.cxx
+fibData/R3BFibMappedData.cxx
+fibData/R3BFibCalData.cxx
 )
 
 

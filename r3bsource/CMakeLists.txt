@@ -16,6 +16,7 @@ ${R3BROOT_SOURCE_DIR}/r3bdata/califaData
 ${R3BROOT_SOURCE_DIR}/r3bdata/neulandData
 ${R3BROOT_SOURCE_DIR}/r3bdata/pspData
 ${R3BROOT_SOURCE_DIR}/r3bdata/fi4Data
+${R3BROOT_SOURCE_DIR}/r3bdata/fibData
 ${R3BROOT_SOURCE_DIR}/r3bdata/losData
 ${R3BROOT_SOURCE_DIR}/r3bdata/tofData
 ${R3BROOT_SOURCE_DIR}/r3bdata/strawtubesData
@@ -39,7 +40,7 @@ R3BReader.cxx
 R3BUnpackReader.cxx
 R3BWhiterabbitReader.cxx
 R3BPspxReader.cxx
-#R3BFiberReader.cxx
+R3BFiberReader.cxx
 R3BLosReader.cxx
 R3BTofdReader.cxx
 R3BCalifaFebexReader.cxx
@@ -48,6 +49,7 @@ R3BNeulandTamexReader.cxx
 R3BNeulandTacquilaReader.cxx
 R3BStrawtubesReader.cxx
 R3BStartrackReader.cxx
+#R3BFib4Reader.cxx
 )
 
 Set(STRUCT_HEADERS
@@ -63,6 +65,7 @@ ext_h101_raw_califa_febex.h
 ext_h101_raw_nnp_tamex.h
 ext_h101_strawtubes.h
 ext_h101_star.h
+ext_h101_fibfour.h
 )
 
 # fill list of header files from list of source files

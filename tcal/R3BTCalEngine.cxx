@@ -53,6 +53,8 @@ void R3BTCalEngine::Fill(Int_t plane, Int_t paddle, Int_t side, Int_t tdc)
     {
         LOG(ERROR) << "R3BTCalEngine::Fill : index out of max range " << plane << " / " << paddle << " / " << side
                    << FairLogger::endl;
+        LOG(ERROR) << "R3BTCalEngine::Fill : ranges: " << N_PLANE_MAX << " / " << N_PADDLE_MAX  << " / " << N_SIDE_MAX
+                   << FairLogger::endl;
         return;
     }
     if (NULL == fhData[plane - 1][paddle - 1][side - 1])

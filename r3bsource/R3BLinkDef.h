@@ -21,6 +21,8 @@
 #pragma link C++ class R3BNeulandTacquilaReader+;
 #pragma link C++ class R3BStrawtubesReader+;
 #pragma link C++ class R3BStartrackReader+;
+#pragma link C++ class R3BFiberReader+;
+//#pragma link C++ class R3BFib4Reader+;
 #pragma link C++ class EXT_STR_h101_unpack_t;
 #pragma link C++ class EXT_STR_h101_whiterabbit_onion_t;
 #pragma link C++ class EXT_STR_h101_raw_nnp_onion_t;
@@ -34,4 +36,5 @@
 #pragma link C++ class EXT_STR_h101_CALIFA_onion_t;
 #pragma link C++ class EXT_STR_h101_raw_nnp_tamex_onion_t;
 #pragma link C++ class EXT_STR_h101_STAR_onion_t;
+#pragma link C++ class EXT_STR_h101_FIBFOUR_onion_t;
 #endif

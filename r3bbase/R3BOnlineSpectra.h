@@ -163,6 +163,9 @@ class R3BOnlineSpectra : public FairTask
 	                     "Fi10Hit","Fi11Hit"};
     const char* cMapped[14];
     const char* cHit[14]; 
+// Number of fibers per detector
+   Double_t n_fiber[14]={256.,256.,256.,256,512.,512.,2048.,2048.,1024.,512.,512.,512.,1024.,1024.};    
+    
      
 	// check for trigger should be done globablly (somewhere else)
     R3BEventHeader* header;                     /**< Event header. */
@@ -190,6 +193,8 @@ class R3BOnlineSpectra : public FairTask
     TH1F *fh_channels_Fib[14];
     TH1F *fh_fibers_Fib[14];
     TH1F *fh_mult_Fib[14];
+    TH2F *fh_Fib_ToF[14];
+    TH1F *fh_Fib_pos[14];
     TH2F *fh_time_Fib[14];
     TH2F *fh_multihit_m_Fib[14];   
     TH2F *fh_multihit_s_Fib[14];

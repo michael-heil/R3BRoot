@@ -37,6 +37,7 @@
 #include "TH2F.h"
 #include "TCanvas.h"
 
+#include "THttpServer.h"
 #include "TClonesArray.h"
 #include <sstream>
 #include <fstream>
@@ -220,6 +221,10 @@ InitStatus R3BOnlineSpectra::Init()
 		fh_los_tot_mean->Draw();
 		cLos->cd(0);
 		run->AddObject(cLos);
+		
+		run->AddObject(fh_los_channels);
+		run->AddObject(fh_los_tres_MCFD);
+		run->GetHttpServer()->RegisterCommand("/Reset_LOS", "/Objects/HISTO/los_channels/->Reset()");
 	}
 	
 

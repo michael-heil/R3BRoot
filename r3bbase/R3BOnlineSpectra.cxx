@@ -223,7 +223,7 @@ InitStatus R3BOnlineSpectra::Init()
 		fh_sci8_dt_hits_l->GetXaxis()->SetTitle("dt_LEAD between two hits / ns");
 		fh_sci8_dt_hits_t = new TH1F("sci8_dt_hits_t", "SCI8 dt multihits trailing",40000,-2000,2000);
 		fh_sci8_dt_hits_t->GetXaxis()->SetTitle("dt_TRAIL between two hits / ns");
-		fh_sci8_tres_MCFD = new TH1F("sci8_time_res_MCFD", "SCI8 MCFD Time resolution - raw", 8000, -4., 4.);
+		fh_sci8_tres_MCFD = new TH1F("sci8_time_res_MCFD", "SCI8 MCFD Time resolution - raw", 30000, 0., 300.);
 		fh_sci8_tres_MCFD->GetXaxis()->SetTitle("Time MCFD / ns");
 		fh_sci8_tres_TAMEX = new TH1F("sci8_time_res_TAMEX", "SCI8 TAMEX Time resolution -raw ", 8000, -4., 4.);  
 		fh_sci8_tres_TAMEX->GetXaxis()->SetTitle("Time TAMEX / ns"); 
@@ -1456,8 +1456,9 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
       if(iPlane<=fNofPlanes)
       {
-	fh_tofd_channels[iPlane-1]->Fill(iBar);
-	fh_tofd_channels[iPlane-1]->Fill(-iBar-1);
+	if(iSide==1) fh_tofd_channels[iPlane-1]->Fill(-iBar-1);
+	if(iSide==2) fh_tofd_channels[iPlane-1]->Fill(iBar);
+	
       }
     }
   }
@@ -1601,8 +1602,8 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 	      cout<<"Times2: "<<t2t[jm][iPlane-1][iBar-1]<<" "<<t2l[jm][iPlane-1][iBar-1]<<endl;		 
 	    }
 
-	    fh_tofd_TotPm[iPlane-1]->Fill(iBar,tot1[jm][iPlane-1][iBar-1]);
-	    fh_tofd_TotPm[iPlane-1]->Fill(-iBar-1,tot2[jm][iPlane-1][iBar-1]);
+	    fh_tofd_TotPm[iPlane-1]->Fill(iBar,tot2[jm][iPlane-1][iBar-1]);
+	    fh_tofd_TotPm[iPlane-1]->Fill(-iBar-1,tot1[jm][iPlane-1][iBar-1]);
 
 	  }
 	}

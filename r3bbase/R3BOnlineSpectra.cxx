@@ -56,118 +56,31 @@
 #define IS_NAN(x) TMath::IsNaN(x)
 using namespace std;
 
-
 R3BOnlineSpectra::R3BOnlineSpectra()
-    : FairTask("OnlineSpectra", 1)
-    , fCalItemsLos(NULL)
-    , fCalItemsSci8(NULL)
-    , fCalItemsTofd(NULL)
-    , fCalItemsPspx(NULL)
-    , fHitItemsFi0(NULL)
-    , fHitItemsFi1a(NULL)
-    , fHitItemsFi1b(NULL)
-    , fHitItemsFi2a(NULL)
-    , fHitItemsFi2b(NULL)
-    , fHitItemsFi3a(NULL)
-    , fHitItemsFi3b(NULL)
-    , fHitItemsFi4(NULL)
-    , fHitItemsFi5(NULL)
-    , fHitItemsFi6(NULL)
-    , fHitItemsFi7(NULL)
-    , fHitItemsFi8(NULL)
-    , fHitItemsFi9(NULL)
-    , fHitItemsFi10(NULL)
-    , fHitItemsFi11(NULL)
-    , fCalItemsPtof(NULL)
-    , fMappedItemsLos(NULL)
-    , fMappedItemsSci8(NULL)
-    , fMappedItemsTofd(NULL)
-    , fMappedItemsPspx(NULL)
-    , fMappedItemsFi0(NULL)
-    , fMappedItemsFi1a(NULL)
-    , fMappedItemsFi1b(NULL)
-    , fMappedItemsFi2a(NULL)
-    , fMappedItemsFi2b(NULL)
-    , fMappedItemsFi3a(NULL)
-    , fMappedItemsFi3b(NULL)
-    , fMappedItemsFi4(NULL)
-    , fMappedItemsFi5(NULL)
-    , fMappedItemsFi6(NULL)
-    , fMappedItemsFi7(NULL)
-    , fMappedItemsFi8(NULL)
-    , fMappedItemsFi9(NULL)
-    , fMappedItemsFi10(NULL)
-    , fMappedItemsFi11(NULL)
-    , fTrigger(-1)
-    , fNofPlanes(4)  
-    , fPaddlesPerPlane(6)     
-    , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
-    , fNEvents(0)
-    , fNEvents1(0)
-{
-}
+    : R3BOnlineSpectra("OnlineSpectra", 1)
+{}
 
 R3BOnlineSpectra::R3BOnlineSpectra(const char* name, Int_t iVerbose)
     : FairTask(name, iVerbose)
-    , fCalItemsLos(NULL)
-    , fCalItemsSci8(NULL)
-    , fCalItemsTofd(NULL)
-    , fCalItemsPspx(NULL)
-    , fHitItemsFi0(NULL)
-    , fHitItemsFi1a(NULL)
-    , fHitItemsFi1b(NULL)
-    , fHitItemsFi2a(NULL)
-    , fHitItemsFi2b(NULL)
-    , fHitItemsFi3a(NULL)
-    , fHitItemsFi3b(NULL)
-    , fHitItemsFi4(NULL)
-    , fHitItemsFi5(NULL)
-    , fHitItemsFi6(NULL)
-    , fHitItemsFi7(NULL)
-    , fHitItemsFi8(NULL)
-    , fHitItemsFi9(NULL)
-    , fHitItemsFi10(NULL)
-    , fHitItemsFi11(NULL)
-    , fCalItemsPtof(NULL)
-    , fMappedItemsLos(NULL)
-    , fMappedItemsSci8(NULL)
-    , fMappedItemsTofd(NULL)
-    , fMappedItemsPspx(NULL)
-    , fMappedItemsFi0(NULL)
-    , fMappedItemsFi1a(NULL)
-    , fMappedItemsFi1b(NULL)
-    , fMappedItemsFi2a(NULL)
-    , fMappedItemsFi2b(NULL)
-    , fMappedItemsFi3a(NULL)
-    , fMappedItemsFi3b(NULL)
-    , fMappedItemsFi4(NULL)
-    , fMappedItemsFi5(NULL)
-    , fMappedItemsFi6(NULL)
-    , fMappedItemsFi7(NULL)
-    , fMappedItemsFi8(NULL)
-    , fMappedItemsFi9(NULL)
-    , fMappedItemsFi10(NULL)
-    , fMappedItemsFi11(NULL)
     , fTrigger(-1)
-    , fNofPlanes(4)  
-    , fPaddlesPerPlane(6)    
+    , fNofPlanes(N_PLANE_MAX_TOFD)  
+    , fPaddlesPerPlane(N_PADDLE_MAX_TOFD) 
     , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
     , fNEvents(0)
-    , fNEvents1(0)
 {
 }
 
 R3BOnlineSpectra::~R3BOnlineSpectra()
 {
-   for(int i=0; i<14; i++){	
-	if(fh_channels_Fib[i]) delete(fh_channels_Fib[i]);
-    if(fh_fibers_Fib[i]) delete(fh_fibers_Fib[i]);
-    if(fh_mult_Fib[i]) delete(fh_mult_Fib[i]);
-    if(fh_time_Fib[i]) delete(fh_time_Fib[i]);
-    if(fh_multihit_m_Fib[i]) delete(fh_multihit_m_Fib[i]);   
-    if(fh_multihit_s_Fib[i]) delete(fh_multihit_s_Fib[i]);
-    if(fh_ToT_m_Fib[i]) delete(fh_ToT_m_Fib[i]);
-    if(fh_ToT_s_Fib[i]) delete(fh_ToT_s_Fib[i]);
+   for(int i = 0; i < NOF_FIB_DET; i++) {	
+     delete fh_channels_Fib[i];
+     delete fh_fibers_Fib[i];
+     delete fh_mult_Fib[i];
+     delete fh_time_Fib[i];
+     delete fh_multihit_m_Fib[i];   
+     delete fh_multihit_s_Fib[i];
+     delete fh_ToT_m_Fib[i];
+     delete fh_ToT_s_Fib[i];
    } 
 }
 
@@ -191,17 +104,32 @@ InitStatus R3BOnlineSpectra::Init()
 
 	run->GetHttpServer()->Register("/Tasks", this);
 
+
+        // Get objects for detectors on all levels
+        assert(DET_MAX + 1 == sizeof(fDetectorNames)/sizeof(fDetectorNames[0]));
+        printf("Have %d fiber detectors.\n", NOF_FIB_DET);
+        for (int det = 0; det < DET_MAX; det++)
+        {
+                fMappedItems.push_back((TClonesArray *)mgr->GetObject(Form("%sMapped", fDetectorNames[det])));
+                if (NULL == fMappedItems.at(det)) {
+                  printf("Could not find mapped data for '%s'.\n", fDetectorNames[det]);
+                }
+                fCalItems.push_back((TClonesArray *)mgr->GetObject(Form("%sCal", fDetectorNames[det])));
+                fHitItems.push_back((TClonesArray *)mgr->GetObject(Form("%sHit", fDetectorNames[det])));
+        }
+
+
+
+	//------------------------------------------------------------------------ 
 	// create histograms of all detectors  
+	//------------------------------------------------------------------------ 
+
+
 
 	//------------------------------------------------------------------------ 
 	// Sci8 detector
-	// get access to Mapped data
-	fMappedItemsSci8 = (TClonesArray*)mgr->GetObject("Sci8Mapped");
-	// get access to cal data
-	fCalItemsSci8 = (TClonesArray*)mgr->GetObject("Sci8Cal");
 
-
-	if(fMappedItemsSci8){
+	if(fMappedItems.at(DET_SCI8)){
 		TCanvas *cSci8 = new TCanvas("Sci8", "SCI8", 10, 10, 850, 850);
 
 		fh_sci8_channels = new TH1F("sci8_channels", "SCI8 channels", 4, 0., 4.); 
@@ -279,15 +207,9 @@ InitStatus R3BOnlineSpectra::Init()
 
 	//------------------------------------------------------------------------ 
 	// Los detector
-	// get access to Mapped data
-	fMappedItemsLos = (TClonesArray*)mgr->GetObject("LosMapped");
-	// get access to cal data
-	fCalItemsLos = (TClonesArray*)mgr->GetObject("LosCal");
 
-
-	if(fMappedItemsLos){
+	if(fMappedItems.at(DET_LOS)){
 		TCanvas *cLos = new TCanvas("Los", "LOS", 10, 10, 750, 850);
-
 
 		fh_los_channels = new TH1F("los_channels", "LOS channels", 10, 0., 10.); 
 		fh_los_channels->GetXaxis()->SetTitle("Channel number");
@@ -357,102 +279,45 @@ InitStatus R3BOnlineSpectra::Init()
 
 
 	//-----------------------------------------------------------------------
-	// Fiber Detectors 1-14
-
-	// First see if a given FiberI is present (there is probably a better way to do it):
-	fMappedItemsFi1a = (TClonesArray*)mgr->GetObject("Fi1aMapped");
-	if(fMappedItemsFi1a) FibPresent[0] = true;
-	fMappedItemsFi1b = (TClonesArray*)mgr->GetObject("Fi1bMapped");
-	if(fMappedItemsFi1b) FibPresent[1] = true;
-	fMappedItemsFi2a = (TClonesArray*)mgr->GetObject("Fi2aMapped");
-	if(fMappedItemsFi2a) FibPresent[2] = true;  
-	fMappedItemsFi2b = (TClonesArray*)mgr->GetObject("Fi2bMapped");
-	if(fMappedItemsFi2b) FibPresent[3] = true;      
-	fMappedItemsFi3a = (TClonesArray*)mgr->GetObject("Fi3aMapped");
-	if(fMappedItemsFi3a) FibPresent[4] = true;      
-	fMappedItemsFi3b = (TClonesArray*)mgr->GetObject("Fi3bMapped");
-	if(fMappedItemsFi3b) FibPresent[5] = true;      
-	fMappedItemsFi4 = (TClonesArray*)mgr->GetObject("Fi4Mapped");
-	if(fMappedItemsFi4) FibPresent[6] = true;      
-	fMappedItemsFi5 = (TClonesArray*)mgr->GetObject("Fi5Mapped");
-	if(fMappedItemsFi5) FibPresent[7] = true;     
-	fMappedItemsFi6 = (TClonesArray*)mgr->GetObject("Fi6Mapped");
-	if(fMappedItemsFi6) FibPresent[8] = true;      
-	fMappedItemsFi7 = (TClonesArray*)mgr->GetObject("Fi7Mapped");
-	if(fMappedItemsFi7) FibPresent[9] = true;      
-	fMappedItemsFi8 = (TClonesArray*)mgr->GetObject("Fi8Mapped");
-	if(fMappedItemsFi8) FibPresent[10] = true;     
-	fMappedItemsFi9 = (TClonesArray*)mgr->GetObject("Fi9Mapped");
-	if(fMappedItemsFi9) FibPresent[11] = true;      
-	fMappedItemsFi10 = (TClonesArray*)mgr->GetObject("Fi10Mapped");
-	if(fMappedItemsFi10) FibPresent[12] = true;      
-	fMappedItemsFi11 = (TClonesArray*)mgr->GetObject("Fi11Mapped");
-	if(fMappedItemsFi11) FibPresent[13] = true; 
+	// Fiber Detectors 1-NOF_FIB_DET
 
 	char canvName[255];
-	TCanvas *FibCanvas[14];
+	TCanvas *FibCanvas[NOF_FIB_DET];
 
-	for(Int_t ifibcount = 0; ifibcount < 14; ifibcount++){
+	for(Int_t ifibcount = 0; ifibcount < NOF_FIB_DET; ifibcount++){
 
 		std::stringstream fibhitobj;
 		std::stringstream fibmapobj;
 		std::stringstream FiName;   
 		std::string temp;	  
 
-		std::stringstream histName1,histName2,histName3,histName4,histName5,histName6,histName7,histName8,histName9,histName10,histName11,histName12;
-		std::stringstream histTitle1,histTitle2,histTitle3,histTitle4,histTitle5,histTitle6,histTitle7,histTitle8,histTitle9,histTitle10,histTitle11,histTitle12;	   	    	 
+		std::stringstream histName1,histName2,histName3,histName4,histName5,histName6,
+                  histName7,histName8,histName9,histName10,histName11,histName12;
+		std::stringstream histTitle1,histTitle2,histTitle3,histTitle4,histTitle5,histTitle6,
+                  histTitle7,histTitle8,histTitle9,histTitle10,histTitle11,histTitle12;	   	    	 
 
-		if(FibPresent[ifibcount]){
-			if(ifibcount < 6){
-				if(ifibcount == 0 || ifibcount ==1) ifibdet = 1; 
-				if(ifibcount == 2 || ifibcount ==3) ifibdet = 2; 
-				if(ifibcount == 4 || ifibcount ==5) ifibdet = 3;
-				if(ifibcount % 2 == 0) FiName<<"Fi"<<ifibdet<<"a";	
-				else FiName<<"Fi"<<ifibdet<<"b";				 
-			}	
-			if(ifibcount > 5) {
-				ifibdet = ifibcount-2;
-				FiName<<"Fi"<<ifibdet;
-			}	      
-
-			// get access to Mapped data     
-			fibmapobj<<FiName.str()<<"Mapped";  
-			temp = fibmapobj.str();
-			cMapped[ifibcount] = Mapped[ifibcount].c_str();
-			aMapped.at(ifibcount) = (TClonesArray*)mgr->GetObject(cMapped[ifibcount]); 
-
-			// get access to cal data     
-			fibhitobj<<FiName.str()<<"Hit";  
-			temp = fibhitobj.str();
-			cHit[ifibcount] = Hit[ifibcount].c_str(); 
-			aHit.at(ifibcount) = (TClonesArray*)mgr->GetObject(cHit[ifibcount]);
-		} 
-
-		if(aMapped.at(ifibcount)){
+		if(fMappedItems.at(DET_FI_FIRST + ifibcount)) {
 
 			const char* chistName;
 			const char* chistTitle;
-			const char* cfibName;
+                        const char* detName;
 			std::string tempTitle;
 			std::string tempName;
 			std::stringstream tempFibName;
 			std::string tempFibNames;
 			std::stringstream tempCanvName;
-			std::string stempCanvNames;
 
-			tempFibNames = FiName.str(); 
-			cfibName = tempFibNames.c_str();
-			stempCanvNames = FiName.str(); 
+                        detName = fDetectorNames[DET_FI_FIRST + ifibcount];
 
-			cout<<"I am creating canvas "<<stempCanvNames.c_str()<<endl;
+			cout << "I am creating canvas " << detName <<endl;
 
-			FibCanvas[ifibcount]=new TCanvas(stempCanvNames.c_str(),stempCanvNames.c_str(), 10, 10, 910, 910);
+			FibCanvas[ifibcount]=new TCanvas(detName, detName, 10, 10, 910, 910);
 
 			// Channels:   
-			histName1<<cfibName<<"_channels";
+			histName1 << detName << "_channels";
 			tempName=histName1.str();
 			chistName=tempName.c_str();
-			histTitle1<<cfibName<<" channels";
+			histTitle1 << detName << " channels";
 			tempTitle=histTitle1.str();
 			chistTitle=tempTitle.c_str();
 			fh_channels_Fib[ifibcount] = new TH1F(chistName, chistTitle, 520, 0., 520.);
@@ -461,10 +326,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();      
 			// Fibers:
-			histName2<<cfibName<<"_fibers";
+			histName2 << detName << "_fibers";
 			tempName=histName2.str();
 			chistName=tempName.c_str();
-			histTitle2<<cfibName<<" fibers";
+			histTitle2 << detName << " fibers";
 			tempTitle=histTitle2.str();
 			chistTitle=tempTitle.c_str();
 			fh_fibers_Fib[ifibcount] = new TH1F(chistName, chistTitle, 2100, 0., 2100.); 
@@ -473,10 +338,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();
 			// Multiplicity (no of hitted fibers):
-			histName3<<cfibName<<"_mult";
+			histName3 << detName << "_mult";
 			tempName=histName3.str();
 			chistName=tempName.c_str();
-			histTitle3<<cfibName<<" No hitted fibers ";
+			histTitle3 << detName << " No hitted fibers ";
 			tempTitle=histTitle3.str();
 			chistTitle=tempTitle.c_str();
 			fh_mult_Fib[ifibcount] = new TH1F(chistName, chistTitle, 100, 0., 100.);	   
@@ -485,10 +350,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();   
 			// Multihit MAPMT:
-			histName5<<cfibName<<"_multihit_m";
+			histName5 << detName << "_multihit_m";
 			tempName=histName5.str();
 			chistName=tempName.c_str();
-			histTitle5<<cfibName<<" multihits MAPMT";
+			histTitle5 << detName << " multihits MAPMT";
 			tempTitle=histTitle5.str();
 			chistTitle=tempTitle.c_str();   
 			fh_multihit_m_Fib[ifibcount] = new TH2F(chistName, chistTitle, 520, 0., 520., 20, 0., 20.);
@@ -497,10 +362,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();	   
 			// Multihit SAPMT:
-			histName6<<cfibName<<"_multihit_s";
+			histName6 << detName << "_multihit_s";
 			tempName=histName6.str();
 			chistName=tempName.c_str();
-			histTitle6<<cfibName<<" multihits SAPMT";
+			histTitle6 << detName << " multihits SAPMT";
 			tempTitle=histTitle6.str();
 			chistTitle=tempTitle.c_str();	   
 			fh_multihit_s_Fib[ifibcount] = new TH2F(chistName, chistTitle, 16, 0., 16., 20, 0., 20.);   	   
@@ -509,10 +374,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear(); 
 			// ToT MAPMT:  
-			histName7<<cfibName<<"_tot_m";
+			histName7 << detName << "_tot_m";
 			tempName=histName7.str();
 			chistName=tempName.c_str();
-			histTitle7<<cfibName<<" ToT of MAPMT";
+			histTitle7 << detName << " ToT of MAPMT";
 			tempTitle=histTitle7.str();
 			chistTitle=tempTitle.c_str();	   
 			fh_ToT_m_Fib[ifibcount] = new TH2F(chistName, chistTitle, 2100, 0., 2100., 400, 0., 200.);   	   
@@ -521,10 +386,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();
 			// ToT SAPMT:  
-			histName8<<cfibName<<"_tot_s";
+			histName8 << detName << "_tot_s";
 			tempName=histName8.str();
 			chistName=tempName.c_str();
-			histTitle8<<cfibName<<" ToT of SAPMT";
+			histTitle8 << detName << " ToT of SAPMT";
 			tempTitle=histTitle8.str();
 			chistTitle=tempTitle.c_str();	   
 			fh_ToT_s_Fib[ifibcount] = new TH2F(chistName, chistTitle, 2100, 0., 2100., 400, 0., 200.);   	   
@@ -533,10 +398,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();	   
 			// Time of fiber: 
-			histName9<<cfibName<<"_TimevsFiber";
+			histName9 << detName << "_TimevsFiber";
 			tempName=histName9.str();
 			chistName=tempName.c_str();
-			histTitle9<<cfibName<<" Time vs Fiber";
+			histTitle9 << detName << " Time vs Fiber";
 			tempTitle=histTitle9.str();
 			chistTitle=tempTitle.c_str();
 			fh_time_Fib[ifibcount]= new TH2F(chistName, chistTitle, 2100, 0., 2100., 20000, -1024., 1024.);
@@ -545,10 +410,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();
 			// ToF LOS -> Fiber:
-			histName11<<cfibName<<"_tof";
+			histName11 << detName << "_tof";
 			tempName=histName11.str();
 			chistName=tempName.c_str();
-			histTitle11<<cfibName<<" ToF LOS to Fiber ";
+			histTitle11 << detName << " ToF LOS to Fiber ";
 			tempTitle=histTitle11.str();
 			chistTitle=tempTitle.c_str();
 			fh_Fib_ToF[ifibcount] = new TH2F(chistName, chistTitle, 2100, 0., 2100.,10000, -5000., 5000.);	   
@@ -557,10 +422,10 @@ InitStatus R3BOnlineSpectra::Init()
 			tempName.clear();
 			tempTitle.clear();         
 			// Not-calibrated position:
-			histName12<<cfibName<<"_pos";
+			histName12 << detName << "_pos";
 			tempName=histName12.str();
 			chistName=tempName.c_str();
-			histTitle12<<cfibName<<" Not-calibrated position ";
+			histTitle12 << detName << " Not-calibrated position ";
 			tempTitle=histTitle12.str();
 			chistTitle=tempTitle.c_str();
 			fh_Fib_pos[ifibcount] = new TH1F(chistName, chistTitle, 6000, -1500., 1500.);	   
@@ -602,9 +467,7 @@ InitStatus R3BOnlineSpectra::Init()
 	//---------------------------------------------------------------------------------------
 	//Ptof detector
 
-	fCalItemsPtof = (TClonesArray*)mgr->GetObject("PtofCal");
-
-	if(fCalItemsPtof){
+	if(fCalItems.at(DET_PTOF)){
 
 		TCanvas *cPtof_plane = new TCanvas("Ptof_plane", "Ptof plane", 10, 10, 510, 510);
 		cPtof_plane->Divide(1, 2);
@@ -659,8 +522,7 @@ InitStatus R3BOnlineSpectra::Init()
 	//---------------------------------------------------------------------------------------------------
 	//TofD detector
 
-	fMappedItemsTofd = (TClonesArray*)mgr->GetObject("TofdMapped");
-	if(fMappedItemsTofd){
+	if(fMappedItems.at(DET_TOFD)){
 		TCanvas *cTofd_planes = new TCanvas("TOFD_planes", "TOFD planes", 10, 10, 1100, 1000);
 		cTofd_planes->Divide(5, 4);
 
@@ -759,8 +621,6 @@ InitStatus R3BOnlineSpectra::Init()
 		run->GetHttpServer()->RegisterCommand("Reset_TOFD", Form("/Tasks/%s/->Reset_TOFD_Histo()", GetName())); 
 	}
 
-	fCalItemsTofd = (TClonesArray*)mgr->GetObject("TofdCal");
-
 	// -------------------------------------------------------------------------
 
 	return kSUCCESS;
@@ -845,15 +705,16 @@ void R3BOnlineSpectra::Exec(Option_t* option)
   Bool_t LOSID = true; 
   Int_t Multip;
 
-  if(fMappedItemsLos && fMappedItemsLos->GetEntriesFast())
+  if(fMappedItems.at(DET_LOS))
   {
-    Int_t nHits = fMappedItemsLos->GetEntriesFast();
+    auto det = fMappedItems.at(DET_LOS);
+    Int_t nHits = det->GetEntriesFast();
 
     Multip = nHits;
 
     for (Int_t ihit = 0; ihit < nHits; ihit++)
     {
-      R3BLosMappedData* hit = (R3BLosMappedData*)fMappedItemsLos->At(ihit);
+      R3BLosMappedData* hit = (R3BLosMappedData*)det->At(ihit);
       if (!hit) continue;
 
       // channel numbers are stored 1-based (1..n)
@@ -866,9 +727,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
 
   Int_t nPart;   
-  if(fCalItemsLos && fCalItemsLos->GetEntriesFast())
+  if(fCalItems.at(DET_LOS))
   {
-    nPart = fCalItemsLos->GetEntriesFast();  
+    auto det = fCalItems.at(DET_LOS);
+    nPart = det->GetEntriesFast();  
 
     fh_los_multihit->Fill(nPart);
 
@@ -883,7 +745,7 @@ void R3BOnlineSpectra::Exec(Option_t* option)
       /* 
        * nPart is the number of particle passing through LOS detector in one event
        */ 
-      R3BLosCalData *calData = (R3BLosCalData*)fCalItemsLos->At(iPart);
+      R3BLosCalData *calData = (R3BLosCalData*)det->At(iPart);
       iDet=calData->GetDetector();
 
       // lt=0, l=1,lb=2,b=3,rb=4,r=5,rt=6,t=7 
@@ -1109,15 +971,16 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
   Int_t MultipS8;
 
-  if(fMappedItemsSci8 && fMappedItemsSci8->GetEntriesFast())
+  if(fMappedItems.at(DET_SCI8))
   {
-    Int_t nHits = fMappedItemsSci8->GetEntriesFast();
+    auto det = fMappedItems.at(DET_SCI8);
+    Int_t nHits = det->GetEntriesFast();
 
     MultipS8 = nHits;
 
     for (Int_t ihit = 0; ihit < nHits; ihit++)
     {
-      R3BSci8MappedData* hit = (R3BSci8MappedData*)fMappedItemsSci8->At(ihit);
+      R3BSci8MappedData* hit = (R3BSci8MappedData*)det->At(ihit);
       if (!hit) continue;
 
       // channel numbers are stored 1-based (1..n)
@@ -1130,9 +993,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
 
   Int_t nPartS8;   
-  if(fCalItemsSci8 && fCalItemsSci8->GetEntriesFast())
+  if(fCalItems.at(DET_SCI8))
   {
-    nPartS8 = fCalItemsSci8->GetEntriesFast();  
+    auto det = fCalItems.at(DET_SCI8);
+    nPartS8 = det->GetEntriesFast();  
 
     fh_sci8_multihit->Fill(nPartS8);
 
@@ -1147,7 +1011,7 @@ void R3BOnlineSpectra::Exec(Option_t* option)
       /* 
        * nPart is the number of particle passing through Sci8 detector in one event
        */ 
-      R3BSci8CalData *calDataS8 = (R3BSci8CalData*)fCalItemsSci8->At(iPart);
+      R3BSci8CalData *calDataS8 = (R3BSci8CalData*)det->At(iPart);
       iDet = calDataS8->GetDetector();
 
 
@@ -1286,28 +1150,22 @@ void R3BOnlineSpectra::Exec(Option_t* option)
   //----------------------------------------------------------------------
   Double_t dtime = 0.0/0.0;
 
-  for(Int_t ifibcount = 0; ifibcount < 14; ifibcount++)
+  for(Int_t ifibcount = 0; ifibcount < NOF_FIB_DET; ifibcount++)
   { 
 
     Int_t iFib = 0;  
 
-    if(FibPresent[ifibcount])
-    {	   	 
-      // get access to Mapped data     
-      aMapped.at(ifibcount) = (TClonesArray*)mgr->GetObject(cMapped[ifibcount]); 
-      // get access to cal data     
-      aHit.at(ifibcount) = (TClonesArray*)mgr->GetObject(cHit[ifibcount]);
-    } 
+    auto detMapped = fMappedItems.at(DET_FI_FIRST + ifibcount);
+    auto detHit = fHitItems.at(DET_FI_FIRST + ifibcount);
 
-    if(aMapped.at(ifibcount)) 
+    if(detMapped) 
     {
-
-      Int_t nHits = aMapped.at(ifibcount)->GetEntriesFast();
+      Int_t nHits = detMapped->GetEntriesFast();
       std::vector<UInt_t> mapmt_num(512);
       std::vector<UInt_t> spmt_num(16);
       for (Int_t ihit = 0; ihit < nHits; ihit++)
       {
-	R3BBunchedFiberMappedData* hit = (R3BBunchedFiberMappedData*)aMapped.at(ifibcount)->At(ihit);
+	R3BBunchedFiberMappedData* hit = (R3BBunchedFiberMappedData*)detMapped->At(ihit);
 	if (!hit) continue;
 
 	// channel numbers are stored 1-based (1..n)
@@ -1338,14 +1196,12 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 	auto s = spmt_num.at(i);
 	if(s > 0) fh_multihit_s_Fib[ifibcount]->Fill(i,s); // multihit of a given PADI channel
       }
+    }
 
 
-    } // end if(aMapped[ifibcount])
-
-
-    if(aHit.at(ifibcount)) 
+    if(detHit) 
     {
-      Int_t nHits = aHit.at(ifibcount)->GetEntriesFast(); 
+      Int_t nHits = detHit->GetEntriesFast(); 
 
       Double_t posfib = 0./0.;
       Double_t totMax = 0.;     
@@ -1358,7 +1214,7 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 	Double_t tMAPMT = 0./0.;
 	Double_t tSPMT = 0./0.;
 
-	R3BBunchedFiberHitData* hit = (R3BBunchedFiberHitData*)aHit.at(ifibcount)->At(ihit);
+	R3BBunchedFiberHitData* hit = (R3BBunchedFiberHitData*)detHit->At(ihit);
 	if (!hit) continue;
 
 	iFib = hit->GetFiberId();  // 1..
@@ -1429,13 +1285,14 @@ void R3BOnlineSpectra::Exec(Option_t* option)
   //----------------------------------------------------------------------
 
   Int_t NumPaddles[4]={0};
-  if(fMappedItemsTofd )
+  if(fMappedItems.at(DET_TOFD))
   {
-    Int_t nMapped = fMappedItemsTofd->GetEntriesFast();  	
+    auto det = fMappedItems.at(DET_TOFD);
+    Int_t nMapped = det->GetEntriesFast();  	
     Int_t iPlaneMem = 1, iBarMem = 0; 
     for (Int_t imapped = 0; imapped < nMapped; imapped++)     
     {
-      auto mapped = (R3BTofdMappedData const *)fMappedItemsTofd->At(imapped);
+      auto mapped = (R3BTofdMappedData const *)det->At(imapped);
       if (!mapped) continue; // should not happen
 
       Int_t const iPlane = mapped->GetDetectorId(); // 1..n
@@ -1464,9 +1321,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
   }
 
 
-  if(fCalItemsTofd)
+  if(fCalItems.at(DET_TOFD))
   {
-    Int_t nCals = fCalItemsTofd->GetEntriesFast();
+    auto det = fCalItems.at(DET_TOFD);
+    Int_t nCals = det->GetEntriesFast();
 
     Double_t tot1[10][N_PLANE_MAX_TOFD][N_PADDLE_MAX_TOFD]={0./0.};
     Double_t tot2[10][N_PLANE_MAX_TOFD][N_PADDLE_MAX_TOFD]={0./0.};
@@ -1484,7 +1342,7 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
     for (Int_t ical = 0; ical < nCals; ical++)     
     {
-      auto cal = (R3BTofdCalData const *)fCalItemsTofd->At(ical);
+      auto cal = (R3BTofdCalData const *)det->At(ical);
       if (!cal) continue; // should not happen
 
       Int_t const iPlane  = cal->GetDetectorId();    // 1..n
@@ -1613,7 +1471,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
   // PTOF
   //----------------------------------------------------------------------
 
-  if(fCalItemsPtof){
+  if(fCalItems.at(DET_PTOF))
+  {
+    auto det = fCalItems.at(DET_PTOF);
+
     Double_t tot1=0.;
     Double_t tot2=0.;
     Double_t t1l=0.;
@@ -1623,10 +1484,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
     Bool_t bar_quer1=false;
     Bool_t bar_quer2=false;
 
-    Int_t nHits = fCalItemsPtof->GetEntriesFast();    
+    Int_t nHits = det->GetEntriesFast();    
     LOG(DEBUG) << "nHits: " << nHits << FairLogger::endl;
     for (Int_t ihit = 0; ihit < nHits; ihit++)     {
-      R3BPaddleCalData *hit = (R3BPaddleCalData*)fCalItemsPtof->At(ihit);
+      R3BPaddleCalData *hit = (R3BPaddleCalData*)det->At(ihit);
 
       if (!hit) continue; // should not happen
 
@@ -1680,10 +1541,10 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
     //once again
 
-    nHits = fCalItemsPtof->GetEntriesFast();    
+    nHits = det->GetEntriesFast();    
     //		LOG(DEBUG) << "nHits: " << nHits << FairLogger::endl;
     for (Int_t ihit = 0; ihit < nHits; ihit++){
-      R3BPaddleCalData *hit = (R3BPaddleCalData*)fCalItemsPtof->At(ihit);
+      R3BPaddleCalData *hit = (R3BPaddleCalData*)det->At(ihit);
 
       if (!hit) continue; // should not happen
 
@@ -1739,65 +1600,40 @@ void R3BOnlineSpectra::Exec(Option_t* option)
 
 void R3BOnlineSpectra::FinishEvent()
 {
- 
-    if (fCalItemsLos)
-    {
-        fCalItemsLos->Clear();
+  for(Int_t det = 0; det < DET_MAX; det++) {
+    if(fMappedItems.at(det)) {
+      fMappedItems.at(det)->Clear(); 
     }
-
-    if (fCalItemsTofd)
-    {
-        fCalItemsTofd->Clear();
+    if(fCalItems.at(det)) {
+      fCalItems.at(det)->Clear(); 
     }
-    if (fCalItemsPtof)
-    {
-        fCalItemsPtof->Clear();
+    if(fHitItems.at(det)) {
+      fHitItems.at(det)->Clear(); 
     }
-    if (fMappedItemsLos)
-    {
-        fMappedItemsLos->Clear();
-    }
-    if (fMappedItemsTofd)
-    {
-        fMappedItemsTofd->Clear();
-    }
-
-
-     for(Int_t ifibcount = 0; ifibcount < 11; ifibcount++){	   	    	
-      if(aMapped[ifibcount]) 
-      {
-		aMapped[ifibcount] ->Clear(); 
-	   }
-      if(aHit[ifibcount]) 
-      {
-		aHit[ifibcount] ->Clear(); 
-	   }	   
-	 }  	  
+  }  	  
 }
 
 void R3BOnlineSpectra::FinishTask()
 {    
-    if(fMappedItemsLos){
-		fh_los_channels->Write();
-        fh_los_tot->Write();
-	}
- 
- for(Int_t ifibcount = 0; ifibcount < 11; ifibcount++){	   	    	
+  if(fMappedItems.at(DET_LOS)){
+    fh_los_channels->Write();
+    fh_los_tot->Write();
+  }
 
-    if(aMapped[ifibcount]) 
+  for(Int_t ifibcount = 0; ifibcount < NOF_FIB_DET; ifibcount++) {	
+    if(fMappedItems.at(ifibcount + DET_FI_FIRST)) 
     {
-		
-     fh_channels_Fib[ifibcount]->Write();
-     fh_fibers_Fib[ifibcount]->Write();
-     fh_mult_Fib[ifibcount]->Write();
-     fh_time_Fib[ifibcount]->Write();
-     fh_multihit_m_Fib[ifibcount]->Write();   
-     fh_multihit_s_Fib[ifibcount]->Write();
-     fh_ToT_m_Fib[ifibcount]->Write();
-     fh_ToT_s_Fib[ifibcount]->Write();
-      
+      fh_channels_Fib[ifibcount]->Write();
+      fh_fibers_Fib[ifibcount]->Write();
+      fh_mult_Fib[ifibcount]->Write();
+      fh_time_Fib[ifibcount]->Write();
+      fh_multihit_m_Fib[ifibcount]->Write();   
+      fh_multihit_s_Fib[ifibcount]->Write();
+      fh_ToT_m_Fib[ifibcount]->Write();
+      fh_ToT_s_Fib[ifibcount]->Write();
+
     }
- }   		 
+  }   		 
  
 
 }

@@ -8,8 +8,8 @@ R3BBunchedFiberReader::R3BBunchedFiberReader(char const *a_name, UInt_t
     a_offset, UInt_t a_sub_num, UInt_t a_mapmt_channel_num, UInt_t
     a_spmt_channel_num)
   : R3BReader(TString("R3B") + a_name + "Reader")
-  , fName(a_name)
   , fOffset(a_offset)
+  , fShortName(a_name)
   , fMappedArray(new TClonesArray("R3BBunchedFiberMappedData"))
 {
   fChannelNum[0] = a_sub_num * a_mapmt_channel_num;
@@ -34,7 +34,7 @@ Bool_t R3BBunchedFiberReader::Init()
       break;
     }
   }
-  FairRootManager::Instance()->Register(fName + "Mapped", "Land",
+  FairRootManager::Instance()->Register(fShortName + "Mapped", "Land",
       fMappedArray, kTRUE);
   return kTRUE;
 }

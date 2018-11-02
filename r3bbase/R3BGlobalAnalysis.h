@@ -84,23 +84,22 @@ class R3BGlobalAnalysis : public FairTask
     
 
   private:
-    TClonesArray* fMappedItemsLos;                 /**< Array with mapped items. */
-    TClonesArray* fCalItemsLos;                    /**< Array with cal items. */
-    TClonesArray* fMappedItemsPtof;                /**< Array with mapped items. */
-    TClonesArray* fCalItemsPtof;                   /**< Array with cal items. */
+    TClonesArray* fMappedItemsTofd;                 /**< Array with mapped items. */
+    TClonesArray* fCalItemsTofd;                   /**< Array with cal items. */
     
 	// check for trigger should be done globablly (somewhere else)
     R3BEventHeader* header;                     /**< Event header. */
     Int_t fTrigger;                             /**< Trigger value. */
     Double_t fClockFreq;     /**< Clock cycle in [ns]. */
+    Int_t fNEvents = 0;         /**< Event counter. */
 
-    TH1F *fh_los_channels;    
-    TH1F *fh_los_tres;
 
-    TH1F *fh_ptof_channels;    
-    TH1F *fh_ptof_tot;    
-    TH1F *fh_ptof_tof;    
-    TH2F *fh_ptof_tot_vs_tof;    
+    TH1F *fh_tofd_channels1;    
+    TH1F *fh_tofd_channels2;    
+    TH1F *fh_tofd_tot[20];    
+    TH1F *fh_tofd_tot1[20];    
+    TH1F *fh_tofd_tot2[20];    
+    TH2F *fh_tofd_tot_vs_pos[20];    
 
     
   public:

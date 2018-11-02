@@ -3,6 +3,7 @@
 #include "TClonesArray.h"
 #include "R3BTofdReader.h"
 #include "R3BTofdMappedData.h"
+using namespace std;
 
 extern "C" {
 #include "ext_data_client.h"
@@ -59,7 +60,7 @@ Bool_t R3BTofdReader::Read()
 {
   // Convert plain raw data to multi-dimensional array
   EXT_STR_h101_TOFD_onion* data = (EXT_STR_h101_TOFD_onion*)fData;
-
+//cout<<"New event!!!"<<endl;
   for (uint32_t d = 0; d < MAX_TOFD_PLANES; d++) {
     for (uint32_t t = 0; t < 2; t++) {
       auto const &side = data->TOFD_P[d].T[t];
@@ -84,7 +85,9 @@ Bool_t R3BTofdReader::Read()
                 side.TCLv[j],
                 side.TFLv[j]
                 );
-        }
+//cout<<"leading: plane: "<<d+1<<" tube: "<<t+1<<" channel: "<<channel<<
+//" coarse: "<< side.TCLv[j]<<" fine: "<< side.TFLv[j]<<endl;       
+		}    
         curChannelStart = nextChannelStart;
       }
 
@@ -104,6 +107,8 @@ Bool_t R3BTofdReader::Read()
                   side.TCTv[j],
                   side.TFTv[j]
                   );
+//cout<<"trailing: plane: "<<d+1<<" tube: "<<t+1<<" channel: "<<channel<<
+//" coarse: "<< side.TCTv[j]<<" fine: "<< side.TFTv[j]<<endl;       
         }
         curChannelStart = nextChannelStart;
       }

@@ -127,12 +127,12 @@ void R3BTofdMapped2Cal::Exec(Option_t *option)
     auto mapped = (R3BTofdMappedData const *)fMappedItems->At(mapped_i);
 
     if ((mapped->GetDetectorId()<1) || (mapped->GetDetectorId()>fNofPlanes)) {
-      LOG(DEBUG) << "R3BTofdMapped2Cal::Exec : Plane number out of range: " <<
+      LOG(ERROR) << "R3BTofdMapped2Cal::Exec : Plane number out of range: " <<
         mapped->GetDetectorId() << FairLogger::endl;
       continue;
     }
     if ((mapped->GetBarId()<1) || (mapped->GetBarId()>fPaddlesPerPlane)) {
-      LOG(DEBUG) << "R3BTofdMapped2Cal::Exec : Bar number out of range: " <<
+      LOG(ERROR) << "R3BTofdMapped2Cal::Exec : Bar number out of range: " <<
         mapped->GetBarId() << ", "<<fPaddlesPerPlane<<FairLogger::endl;
       continue;
     }
@@ -147,11 +147,13 @@ void R3BTofdMapped2Cal::Exec(Option_t *option)
         FairLogger::endl;
       continue;
     }
-
+//cout<<"Bar, Side, Edge: "<<mapped->GetBarId()<<" "<< mapped->GetSideId()<<"  "<< mapped->GetEdgeId()<<endl;
     // Convert TDC to [ns] ...
     Double_t time_ns = par->GetTimeVFTX(mapped->GetTimeFine());
     // ... and subtract it from the next clock cycle.
     time_ns = (mapped->GetTimeCoarse() + 1) * fClockFreq - time_ns;
+
+//cout<<"time: "<<time_ns<<endl;
 
     R3BTofdCalData *cal = nullptr;
     size_t i = mapped->GetSideId() * 2 + mapped->GetEdgeId() - 3;
@@ -165,6 +167,7 @@ void R3BTofdMapped2Cal::Exec(Option_t *option)
       assert(cal->GetBarId() == mapped->GetBarId());
 
       if (cal->SetTime_ns(i, time_ns, c_acceptance_ns)) {
+// cout<<"Set time: "<<time_ns<<endl;
         break;
       }
     }

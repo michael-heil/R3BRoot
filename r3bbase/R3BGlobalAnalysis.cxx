@@ -4,34 +4,15 @@
 // ------------------------------------------------------------
 
 /*
- * In this task one can fill spectra of various detectors which are displayed  
- * online in a browser with the help of the http server.
- * One can also collect information from different data levels of various 
- * detectors and do a first analysis. 
- *
- * Task 1: This example file shows how to get access to LOS data (mapped and tcal), 
- * fill histograms. Include this file in r3broot, start the http server in you macro, 
- * call this task and start to analyse run 165.
- * Display the online histograms in a browser by connecting to the computer
- * which runs the task and open port 8080.
- * e.g.: http://lxg0897.gsi.de:8080
- * 
- * Task 2: Extend this file by showing similar histograms for the Ptof detector.
- * e.g. Create a new canvas for the Ptof detector and display the histogram of 
- * hit bars to see where the beam is hitting the detector with mapped data.
- * Make a histogram of the time-over-threshold of bar 2 (tot=tt-tl) with cal data.
- * 
- * Task 3: Combine the time information of the LOS detector and the average time
- * of bar 2 of the Ptof detector (tl1+tl2)/2 and create a histogram of the 
- * time-of-flight of the beam particles. Add a 2D histogram with ToT vs. ToF
+ * Analysis of ToFD data of experiment s438b  
  */
 
 
 #include "R3BGlobalAnalysis.h"
-#include "R3BLosCalData.h"
-#include "R3BLosMappedData.h"
-#include "R3BPaddleTamexMappedData.h"
-#include "R3BPaddleCalData.h"
+
+#include "R3BTofdCalData.h"
+#include "R3BTofdMappedData.h"
+
 #include "R3BEventHeader.h"
 #include "R3BTCalEngine.h"
 #include "FairRunAna.h"
@@ -49,24 +30,22 @@ using namespace std;
 
 
 R3BGlobalAnalysis::R3BGlobalAnalysis()
-    : FairTask("OnlineSpectra", 1)
-    , fCalItemsLos(NULL)
-    , fCalItemsPtof(NULL)
-    , fMappedItemsLos(NULL)
-    , fMappedItemsPtof(NULL)
+    : FairTask("GlobalAnalysis", 1)
+    , fCalItemsTofd(NULL)
+    , fMappedItemsTofd(NULL)
     , fTrigger(-1)
     , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
+    , fNEvents(0)
 {
 }
 
 R3BGlobalAnalysis::R3BGlobalAnalysis(const char* name, Int_t iVerbose)
     : FairTask(name, iVerbose)
-    , fCalItemsLos(NULL)
-    , fCalItemsPtof(NULL)
-    , fMappedItemsLos(NULL)
-    , fMappedItemsPtof(NULL)
+    , fCalItemsTofd(NULL)
+    , fMappedItemsTofd(NULL)
     , fTrigger(-1)
     , fClockFreq(1. / VFTX_CLOCK_MHZ * 1000.)
+    , fNEvents(0)
 {
 }
 
@@ -85,70 +64,111 @@ InitStatus R3BGlobalAnalysis::Init()
 
     FairRunOnline *run = FairRunOnline::Instance();
 
-    // LOS data
+
+    // Tofd data
     // get access to Mapped data
-    fMappedItemsLos = (TClonesArray*)mgr->GetObject("LosMapped");
+    fMappedItemsTofd = (TClonesArray*)mgr->GetObject("TofdMapped");
 
     // get access to cal data
-    fCalItemsLos = (TClonesArray*)mgr->GetObject("LosCal");
- 
-    // define histograms 
-    fh_los_channels = new TH1F("los_channels", "LOS channels", 6, 0., 6.); 
-    fh_los_channels->GetXaxis()->SetTitle("PMT number");
-    fh_los_channels->GetYaxis()->SetTitle("counts");  
-    
-    fh_los_tres = new TH1F("los_time_res", "LOS Time resolution", 4000, -4., 0.);
-    fh_los_tres->GetXaxis()->SetTitle("delta t in ns");
-    fh_los_tres->GetYaxis()->SetTitle("counts");  
-        
-    // define canvas in which all histograms are grouped
-    TCanvas *cLos = new TCanvas("Los", "LOS", 10, 10, 500, 500);
-    cLos->Divide(1, 2);
-    cLos->cd(1);
-    fh_los_channels->Draw();
-    cLos->cd(2);
-    fh_los_tres->Draw();
-    cLos->cd(0);
-    run->AddObject(cLos);
-
-    // Ptof data
-    // get access to Mapped data
-    fMappedItemsPtof = (TClonesArray*)mgr->GetObject("PtofMapped");
-
-    // get access to cal data
-    fCalItemsPtof = (TClonesArray*)mgr->GetObject("PtofCal");
+    fCalItemsTofd = (TClonesArray*)mgr->GetObject("TofdCal");
 
     // define histograms
-    fh_ptof_channels = new TH1F("ptof_channels", "PToF channels", 8, 0, 8.);
-    fh_ptof_channels->GetXaxis()->SetTitle("Bar number");
-    fh_ptof_channels->GetYaxis()->SetTitle("counts");  
+    fh_tofd_channels1 = new TH1F("Tofd_channels1", "ToFD channels PM1", 20, 0, 20.);
+    fh_tofd_channels1->GetXaxis()->SetTitle("Bar number");
+    fh_tofd_channels1->GetYaxis()->SetTitle("counts");  
 
-    fh_ptof_tot= new TH1F("ptof_tot", "PToF ToT", 500, 0, 50.);
-    fh_ptof_tot->GetXaxis()->SetTitle("ToT in ns");
-    fh_ptof_tot->GetYaxis()->SetTitle("counts");  
+    fh_tofd_channels2 = new TH1F("Tofd_channels2", "ToFD channels PM2", 20, 0, 20.);
+    fh_tofd_channels2->GetXaxis()->SetTitle("Bar number");
+    fh_tofd_channels2->GetYaxis()->SetTitle("counts");  
 
-    fh_ptof_tof= new TH1F("ptof_tof", "PToF ToF", 1000, 0, 10.);
-    fh_ptof_tof->GetXaxis()->SetTitle("ToF in ns");
-    fh_ptof_tof->GetYaxis()->SetTitle("counts");  
+    for (Int_t j = 0; j < 16; j++){
+	char strName1[255];
+	sprintf(strName1, "tofd_tot_bar_%d", j+1);
+	char strName2[255];
+	sprintf(strName2, "Tofd ToT bar %d", j+1);        
+        fh_tofd_tot[j] = new TH1F(strName1, strName2, 500, 0, 50.);
+        fh_tofd_tot[j]->GetXaxis()->SetTitle("ToT in ns");
+        fh_tofd_tot[j]->GetYaxis()->SetTitle("counts");  
+    }
+
+    for (Int_t j = 0; j < 16; j++){
+	char strName1[255];
+	sprintf(strName1, "tofd_tot1_bar_%d", j+1);
+	char strName2[255];
+	sprintf(strName2, "Tofd ToT1 bar %d", j+1);        
+        fh_tofd_tot1[j] = new TH1F(strName1, strName2, 500, 0, 50.);
+        fh_tofd_tot1[j]->GetXaxis()->SetTitle("ToT in ns");
+        fh_tofd_tot1[j]->GetYaxis()->SetTitle("counts");  
+    }
+
+    for (Int_t j = 0; j < 16; j++){
+	char strName1[255];
+	sprintf(strName1, "tofd_tot2_bar_%d", j+1);
+	char strName2[255];
+	sprintf(strName2, "Tofd ToT2 bar %d", j+1);        
+        fh_tofd_tot2[j] = new TH1F(strName1, strName2, 500, 0, 50.);
+        fh_tofd_tot2[j]->GetXaxis()->SetTitle("ToT in ns");
+        fh_tofd_tot2[j]->GetYaxis()->SetTitle("counts");  
+    }
     
-    fh_ptof_tot_vs_tof= new TH2F("ptof_tot_vs_tof", "PToF ToT vs. ToF", 1000, 0, 10., 500, 0, 50.);
-    fh_ptof_tot_vs_tof->GetXaxis()->SetTitle("ToF in ns");
-    fh_ptof_tot_vs_tof->GetYaxis()->SetTitle("ToT in ns");  
-
+    for (Int_t j = 0; j < 16; j++){
+	char strName1[255];
+	sprintf(strName1, "tofd_tot_vs_pos_bar_%d", j+1);
+	char strName2[255];
+	sprintf(strName2, "Tofd ToT vs pos bar %d", j+1);        
+        fh_tofd_tot_vs_pos[j]= new TH2F(strName1, strName2, 200, -50, 50., 500, 0, 50.);
+        fh_tofd_tot_vs_pos[j]->GetXaxis()->SetTitle("Pos in cm");
+        fh_tofd_tot_vs_pos[j]->GetYaxis()->SetTitle("ToT in ns");  
+    }
+    
     // define canvas in which all histograms are grouped
-    TCanvas *cPtof = new TCanvas("Ptof", "PTof", 10, 10, 500, 500);
-    cPtof->Divide(2, 2);
-    cPtof->cd(1);
-    fh_ptof_channels->Draw();    
-    cPtof->cd(2);
-    fh_ptof_tot->Draw();    
-    cPtof->cd(3);
-    fh_ptof_tof->Draw();    
-    cPtof->cd(4);
-    fh_ptof_tot_vs_tof->Draw("colz");        
-    cPtof->cd(0);
-    run->AddObject(cPtof);
+    TCanvas *ctofd1 = new TCanvas("tofd", "tofd", 10, 10, 500, 500);
+    ctofd1->Divide(1, 2);
+    ctofd1->cd(1);
+    fh_tofd_channels1->Draw();    
+    ctofd1->cd(2);
+    fh_tofd_channels2->Draw();    
+    ctofd1->cd(0);
+    run->AddObject(ctofd1);
  
+
+    TCanvas *ctofd2 = new TCanvas("tofd_tot1", "tofd_tot1", 10, 10, 500, 500);
+    ctofd2->Divide(4, 4);
+    for (Int_t j = 1; j < 17; j++){
+        ctofd2->cd(j);
+        fh_tofd_tot1[j-1]->Draw();    
+    }
+    ctofd2->cd(0);
+    run->AddObject(ctofd2);
+ 
+    TCanvas *ctofd4 = new TCanvas("tofd_tot2", "tofd_tot2", 10, 10, 500, 500);
+    ctofd4->Divide(4, 4);
+    for (Int_t j = 1; j < 17; j++){
+        ctofd4->cd(j);
+        fh_tofd_tot2[j-1]->Draw();    
+    }
+    ctofd4->cd(0);
+    run->AddObject(ctofd4);
+ 
+    TCanvas *ctofd5 = new TCanvas("tofd_tot", "tofd_tot", 10, 10, 500, 500);
+    ctofd5->Divide(4, 4);
+    for (Int_t j = 1; j < 17; j++){
+        ctofd5->cd(j);
+        fh_tofd_tot[j-1]->Draw();    
+    }
+    ctofd5->cd(0);
+    run->AddObject(ctofd5);
+
+    TCanvas *ctofd3 = new TCanvas("tofd_tot_vs_pos", "tofd_tot_vs_pos", 10, 10, 500, 500);
+    ctofd3->Divide(4, 4);
+    for (Int_t j = 1; j < 17; j++){
+        ctofd3->cd(j);
+        fh_tofd_tot_vs_pos[j-1]->Draw("colz");        
+    }
+    ctofd3->cd(0);
+    run->AddObject(ctofd3);
+
+
        
     return kSUCCESS;
 }
@@ -166,58 +186,32 @@ void R3BGlobalAnalysis::Exec(Option_t* option)
 		return;
 
 
-    // if mapped data of LOS are available, fill the histograms
-    if(fMappedItemsLos) 
-    {
-      Int_t nHits = fMappedItemsLos->GetEntriesFast();
-      for (Int_t ihit = 0; ihit < nHits; ihit++)
-      {
-         R3BLosMappedData* hit = (R3BLosMappedData*)fMappedItemsLos->At(ihit);
-         if (!hit) continue;
 
-         // channel numbers are stored 1-based (1..n)
-         Int_t iDet = hit->GetDetector(); // 1..
-         Int_t iCha = hit->GetChannel();  // 1..
-         fh_los_channels->Fill(iCha);				         
-      }
-    }
-
-    // if calibrated data of LOS are available, fill histograms
-    Double_t timeLos=0.;  // This is the start time which can be used for ToF determination of all detectors.
-    if(fCalItemsLos)
+    // if mapped data of tofd are available, fill the histograms
+    if(fMappedItemsTofd)
     {
-      Int_t nHits = fCalItemsLos->GetEntriesFast();    
+
+      Int_t nHits = fMappedItemsTofd->GetEntriesFast();    
       // loop over hits
       for (Int_t ihit = 0; ihit < nHits; ihit++)     
       {
-    	  R3BLosCalData *calData = (R3BLosCalData*)fCalItemsLos->At(ihit);
+    	R3BTofdMappedData *mapped = (R3BTofdMappedData*)fMappedItemsTofd->At(ihit);
+        if (!mapped) continue; // should not happen
+     
+        Int_t const iPlane = mapped->GetDetectorId(); // 1..n
+        Int_t const iBar   = mapped->GetBarId();   // 1..n
+        Int_t const iSide  = mapped->GetSideId();   // 1..n
+        Int_t const iEdge  = mapped->GetEdgeId(); 
 
-          Int_t iDet=calData->GetDetector();
-          fh_los_tres->Fill((calData->fTimeV_r_ns+calData->fTimeV_l_ns)/2. -     		
-	                  (calData->fTimeV_t_ns+calData->fTimeV_b_ns)/2.);
-          timeLos=(calData->fTimeV_r_ns+calData->fTimeV_l_ns+calData->fTimeV_t_ns+calData->fTimeV_b_ns)/4.;		 
-      }            						 
-    }
-
-    // if mapped data of Ptof are available, fill the histograms
-    if(fMappedItemsPtof)
-    {
-      Int_t nHits = fMappedItemsPtof->GetEntriesFast();    
-      // loop over hits
-      for (Int_t ihit = 0; ihit < nHits; ihit++)     
-      {
-    	R3BPaddleTamexMappedData *hit = (R3BPaddleTamexMappedData*)fMappedItemsPtof->At(ihit);
-        if (!hit) continue; // should not happen
-
-        Int_t iPlane = hit->GetPlaneId(); // 1..n
-        Int_t iBar   = hit->GetBarId();   // 1..n
            
-        fh_ptof_channels->Fill(iBar);       
+        if(iSide==1) fh_tofd_channels1->Fill(iBar);  
+        if(iSide==2) fh_tofd_channels2->Fill(iBar);  
+             
       }
     }
 
     // if calibrated data of LOS are available, fill histograms
-    if(fCalItemsPtof)
+    if(fCalItemsTofd)
     {
       // define leading and trailing edge times of PMT1 and PMT2
       Double_t t1l=0.;
@@ -228,25 +222,29 @@ void R3BGlobalAnalysis::Exec(Option_t* option)
       // define time-over-threshold of PMT1 and PMT2
       Double_t tot1=0.;
       Double_t tot2=0.;
-     
-      Int_t nHits = fCalItemsPtof->GetEntriesFast();    
+      
+      Double_t veff=5.7;
+      
+      Int_t nHits = fCalItemsTofd->GetEntriesFast();    
       
       // loop over hits
       for (Int_t ihit = 0; ihit < nHits; ihit++)     
       {
-    	  R3BPaddleCalData *hit = (R3BPaddleCalData*)fCalItemsPtof->At(ihit);
-          if (!hit) continue; // should not happen
 
-          Int_t iPlane  = hit->GetPlane();    // 1..n
-          Int_t iBar  = hit->GetBar();    // 1..n
+    	  R3BTofdCalData *cal = (R3BTofdCalData*)fCalItemsTofd->At(ihit);
+          if (!cal) continue; // should not happen
+
+      Int_t const iPlane  = cal->GetDetectorId();    // 1..n
+      Int_t const iBar  = cal->GetBarId();    // 1..n
 
           // get all times of one bar
-          t1l=hit->fTime1L_ns;
-          t2l=hit->fTime2L_ns;
-          t1t=hit->fTime1T_ns;
-          t2t=hit->fTime2T_ns;
+	t1l = cal->GetTimeBL_ns();
+	t1t = cal->GetTimeBT_ns();
+	t2l = cal->GetTimeTL_ns();
+	t2t = cal->GetTimeTT_ns();  
 
 	  // calculate time over threshold and check if clock counter went out of range
+
           while(t1t - t1l < 0.) {
 	    t1t=t1t+2048.*fClockFreq; 
 	  }
@@ -255,13 +253,6 @@ void R3BGlobalAnalysis::Exec(Option_t* option)
 	    t2t=t2t+2048.*fClockFreq; 
           }
 	 
-	  // calculate time of flight relative to LOS and check if clock counter went out of range
-	  while(t1l-timeLos<0.){
-	    t1t=t1t+2048.*fClockFreq; 
-	    t1l=t1l+2048.*fClockFreq; 
-	    t2t=t2t+2048.*fClockFreq; 
-	    t2l=t2l+2048.*fClockFreq; 			  
-          }
        
           tot1=t1t - t1l;		      
           // negative time-over-thresholds should not happen
@@ -277,40 +268,39 @@ void R3BGlobalAnalysis::Exec(Option_t* option)
               LOG(WARNING) << "times2: " << t2t << " " << t2l << FairLogger::endl;		 
           }
  
-          // fill histograms for bar 2 as example
-          if(iBar==2)
-          {
-            fh_ptof_tot->Fill(sqrt(tot1*tot2));
-            fh_ptof_tof->Fill((t1l+t2l)/2.-timeLos-3580.);
-            fh_ptof_tot_vs_tof->Fill((t1l+t2l)/2.-timeLos-3580.,sqrt(tot1*tot2));
-         }        	
-      }	
-   }   
+          fh_tofd_tot[iBar-1]->Fill(sqrt(tot1*tot2));
+          fh_tofd_tot1[iBar-1]->Fill(tot1);
+          fh_tofd_tot2[iBar-1]->Fill(tot2);
+          if(fNEvents<600000 || fNEvents>1000000)
+          fh_tofd_tot_vs_pos[iBar-1]->Fill((t1l-t2l)*veff,sqrt(tot1*tot2));
+      }	 
+   }  
+   fNEvents += 1;
+ 
 }
 
 void R3BGlobalAnalysis::FinishEvent()
 {
-    if (fCalItemsLos)
+    if (fCalItemsTofd)
     {
-        fCalItemsLos->Clear();
+        fCalItemsTofd->Clear();
     }
-    if (fMappedItemsLos)
+    if (fMappedItemsTofd)
     {
-        fMappedItemsLos->Clear();
-    }
-    if (fCalItemsPtof)
-    {
-        fCalItemsPtof->Clear();
-    }
-    if (fMappedItemsPtof)
-    {
-        fMappedItemsPtof->Clear();
+        fMappedItemsTofd->Clear();
     }
 
 }
 
 void R3BGlobalAnalysis::FinishTask()
 {
+    for (Int_t j = 0; j < 16; j++){
+        fh_tofd_tot[j]->Write();
+        fh_tofd_tot1[j]->Write();
+        fh_tofd_tot2[j]->Write();
+        fh_tofd_tot_vs_pos[j]->Write();
+	}
+
 }
 
 ClassImp(R3BGlobalAnalysis)
